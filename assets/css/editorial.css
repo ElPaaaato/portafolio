@@ -572,3 +572,87 @@ body:has(.thanks:hover, .ticker:hover, .pat-dots:hover, .pat-grid:hover, .hello:
   .ia .msg, .ia .term p{ animation:none !important; opacity:1; }
   .ia .msg.typing{ display:none; }
 }
+
+/* ============================================================
+   CELULAR — solo pantallas chicas o táctiles; la versión de
+   computadora no cambia con nada de lo que sigue.
+   ============================================================ */
+
+/* En pantallas táctiles el "hover" se queda pegado al tocar: las galerías que corren solas no deben pausarse */
+@media (hover:none){
+  .cascade:hover .cas-track, .cascade:focus-within .cas-track, .wall:hover .wall-track{ animation-play-state:running; }
+  .hint-pc{ display:none; }
+}
+
+/* En 2 columnas el carrusel de DJA ocupa sus filas solo y su alto quedaba en 0 */
+@media (max-width:700px){
+  .b-carousel{ aspect-ratio:1; }
+}
+
+@media (max-width:640px){
+  :root{ --sec:68px; }
+
+  /* portada */
+  .cover-kicker{ font-size:.64rem; letter-spacing:.04em; }
+
+  /* separadores de capítulo: menos espacio vacío */
+  .ed .chapter{ min-height:0; padding:96px var(--gutter) 100px; }
+  .chap-folder{ padding:44px 22px 34px; box-shadow:7px 7px 0 var(--ink); border-radius:0 20px 20px 20px; }
+  .pat-film .chap-folder, .pat-rings .chap-folder, .pat-nodes .chap-folder{ box-shadow:7px 7px 0 var(--yellow); }
+  .chap-folder::before{ top:-28px; height:30px; }
+  .chap-title{ font-size:clamp(2rem,10vw,2.7rem); }
+  .chap-cursor{ width:26px; height:30px; }
+  .float-logo{ width:46px; border-radius:13px; }
+  .float-logo.l1{ left:6%; top:22px; }
+  .float-logo.l2{ right:6%; top:26px; }
+  .float-logo.l3{ left:10%; top:auto; bottom:18px; }
+
+  /* sobre mí */
+  .hello-top{ gap:40px; margin-bottom:48px; }
+  .select-box{ padding:18px 20px; font-size:1.7rem; }
+  .hello-lead{ font-size:1rem; margin-top:22px; }
+  .me-photo{ width:min(68vw,260px); }
+  .hello-grid, .hello-side{ gap:22px; }
+  .card{ padding:22px 18px; border-radius:20px; box-shadow:5px 5px 0 var(--ink-on-paper); }
+  .card-title{ margin-bottom:20px; }
+  .timeline{ gap:26px; }
+  .logos{ grid-template-columns:repeat(4,1fr); gap:16px 6px; }
+  .logo-tile img{ width:46px; height:46px; padding:10px; border-radius:12px; }
+  .logo-tile small{ font-size:.64rem; }
+  .stats{ grid-template-columns:repeat(3,1fr); gap:10px; }
+  .stat-big b{ font-size:1.7rem; }
+  .stat-big span{ font-size:.74rem; }
+  .cv-row{ flex-direction:column; gap:10px; }
+  .cv-row .btn{ width:100%; }
+
+  /* números grandes y sombras a la medida de la pantalla */
+  .big-num{ font-size:2.6rem; }
+  .spread-logo{ width:64px; border-radius:12px; }
+  .dja-head{ margin-bottom:32px; gap:24px; }
+  .bento{ gap:10px; }
+  .b-tile{ border-radius:16px; }
+  .shot, .showcase.dark .shot{ box-shadow:6px 6px 0 var(--ink-on-paper); }
+  .showcase.dark .shot{ box-shadow:6px 6px 0 var(--yellow); }
+  a.shot:hover{ box-shadow:6px 6px 0 var(--yellow-2); }
+
+  /* Trébol */
+  .cascade{ height:440px; }
+  .ticket{ --stub:52px; }
+  .ticket-main{ padding:22px 18px; }
+  .ticket h3{ font-size:1.22rem; }
+  .ticket-stub b{ font-size:1rem; }
+
+  /* diseño web: sin cursores, que tapan la captura chica */
+  .sel{ padding:6px; }
+  .mp-cursor{ display:none; }
+  .web-pair{ margin-top:72px; gap:56px; }
+  .web-card{ gap:20px; }
+
+  /* final: botones a todo lo ancho; nombres de capturas en una sola línea */
+  .thanks-actions{ width:100%; flex-direction:column; }
+  .thanks-actions .btn{ width:100%; justify-content:center; }
+  .shot-bar span{ min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+  /* botón de subir más chico y pegado a la orilla */
+  .back-to-top{ width:44px; height:44px; left:14px; bottom:14px; font-size:1.1rem; }
+}
