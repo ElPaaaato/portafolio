@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seguridad · Jobby</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  .switch { position: relative; display: inline-block; width: 40px; height: 22px; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider { position: absolute; cursor: pointer; inset: 0; background: var(--line-2); border-radius: 22px; transition: 200ms; }
+  .slider::before { position: absolute; content: ''; height: 16px; width: 16px; left: 3px; bottom: 3px; background: var(--paper); border-radius: 50%; transition: 200ms; }
+  .switch input:checked + .slider { background: var(--moss); }
+  .switch input:checked + .slider::before { transform: translateX(18px); }
+  .session-row { display: grid; grid-template-columns: 40px 1fr auto; gap: 16px; padding: 14px 18px; background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-md); margin-bottom: 8px; align-items: center; }
+  .session-icon { width: 40px; height: 40px; border-radius: 8px; background: var(--bone); display: grid; place-items: center; color: var(--slate); }
+  .session-info .name { font-size: 0.95rem; color: var(--ink); }
+  .session-info .meta { font-family: var(--mono); font-size: 0.78rem; color: var(--stone); margin-top: 2px; }
+  .session-row.current { border-color: var(--moss); background: rgba(15, 81, 50, 0.04); }
+  .badge-current { background: rgba(15, 81, 50, 0.14); color: var(--moss); padding: 3px 8px; border-radius: 4px; font-family: var(--mono); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; }
+  .log-row { display: grid; grid-template-columns: 120px 1fr 140px 160px; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--line); font-size: 0.88rem; align-items: center; }
+  .log-row:last-child { border: 0; }
+  .log-row .time { font-family: var(--mono); font-size: 0.78rem; color: var(--stone); }
+  .log-row .who { display: flex; align-items: center; gap: 8px; }
+  .log-row .who .av { width: 24px; height: 24px; border-radius: 6px; background: linear-gradient(135deg, #0F5132, #C9A227); color: var(--cream); display: grid; place-items: center; font-family: var(--serif); font-size: 0.7rem; }
+  .log-row .ip { font-family: var(--mono); font-size: 0.78rem; color: var(--stone); }
+  .setting-row { display: grid; grid-template-columns: 1fr auto; gap: 20px; padding: 14px 0; border-bottom: 1px solid var(--line); align-items: center; }
+  .setting-row:last-child { border: 0; }
+  .setting-row .title { font-size: 0.95rem; color: var(--ink); margin-bottom: 4px; }
+  .setting-row .desc { font-size: 0.82rem; color: var(--stone); }
+  @media (max-width: 800px) {
+    .log-row { grid-template-columns: 1fr 1fr; gap: 8px; }
+  }
+  /* ── Usuarios ─────────────────────────────────────────── */
+  .user-row { display: grid; grid-template-columns: 44px 1fr auto auto; gap: 14px; padding: 14px 16px; background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-md); margin-bottom: 8px; align-items: center; transition: border-color 120ms; }
+  .user-row:last-child { margin-bottom: 0; }
+  .user-row:hover { border-color: var(--slate); }
+  .user-row.user-inactive { opacity: 0.5; }
+  .user-av { width: 44px; height: 44px; border-radius: 10px; display: grid; place-items: center; font-family: var(--serif); font-size: 1rem; color: var(--cream); flex-shrink: 0; }
+  .user-info .un { font-size: 0.92rem; color: var(--ink); font-weight: 500; }
+  .user-info .um { font-family: var(--mono); font-size: 0.74rem; color: var(--stone); margin-top: 3px; }
+  .role-chip { display: inline-flex; align-items: center; padding: 4px 11px; border-radius: 6px; font-family: var(--mono); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; }
+  .role-admin      { background: rgba(14,31,26,0.1);    color: var(--ink); }
+  .role-cfo        { background: rgba(201,162,39,0.15); color: #7A6000; }
+  .role-accountant { background: rgba(15,81,50,0.12);   color: var(--moss); }
+  .role-sales      { background: rgba(79,143,207,0.15); color: #2563A8; }
+  .role-viewer     { background: var(--bone);           color: var(--stone); }
+  .user-actions  { display: flex; gap: 6px; align-items: center; }
+  /* ── Permisos por rol ─────────────────────────────────── */
+  .perm-table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+  .perm-table th { font-family: var(--mono); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--stone); padding: 10px 12px; text-align: center; border-bottom: 2px solid var(--line); background: var(--bone); }
+  .perm-table th:first-child { text-align: left; }
+  .perm-table td { padding: 10px 12px; border-bottom: 1px solid var(--line); text-align: center; font-size: 0.85rem; }
+  .perm-table td:first-child { text-align: left; color: var(--ink); }
+  .perm-table tr:last-child td { border: 0; }
+  .perm-check { color: var(--moss); }
+  .perm-dash  { color: var(--line-2); }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <aside class="sidebar"></aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="title">
+        <div class="eyebrow">Tu cuenta</div>
+        <h1 style="margin-top: 8px;">Seguridad</h1>
+        <p>Protege tu cuenta con autenticación de dos factores y revisa tus sesiones activas.</p>
+      </div>
+    </div>
+
+    <div class="fieldset">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;">
+        <div>
+          <h4 style="margin-bottom:4px;">Usuarios y acceso</h4>
+          <div class="desc">Gestiona quién tiene acceso a Jobby y con qué permisos.</div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="openInvite()" style="flex-shrink:0;margin-left:16px;">+ Invitar usuario</button>
+      </div>
+      <div id="usersList"></div>
+    </div>
+
+    <div class="fieldset">
+      <h4>Permisos por rol</h4>
+      <div class="desc">Referencia de lo que puede hacer cada rol en el sistema.</div>
+      <table class="perm-table">
+        <thead>
+          <tr>
+            <th>Módulo</th>
+            <th>Admin</th>
+            <th>CFO</th>
+            <th>Contador</th>
+            <th>Ventas</th>
+            <th>Viewer</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Dashboard</td>
+            <td><span class="perm-check">✓</span></td><td><span class="perm-check">✓</span></td><td><span class="perm-check">✓</span></td><td><span class="perm-check">✓</span></td><td><span class="perm-check">✓</span></td>
+          </tr>
+          <tr>
+            <td>Facturas — ver</td>
+            <td><span class="perm-check">✓</span></td><td><span class="perm-check">✓</span></td><td><span class="perm-check">✓</span></td><td><span class="perm-check">✓</span></td><td><span class="perm-check">✓</span></td>
+          </tr>
+          <tr>
+            <td>Facturas — crear y editar</td>
+            <td><span class="perm-check">✓</span></td><td><span class="perm-check">✓</span></td><td><span class="perm-check">✓</span></td><td><span class="perm-check">✓</span></td><td><span class="perm-dash">—</span></td>
+          </tr>
+          <tr>
+            <td>Pagos y cobranza</td>
+            <td><span class="perm-check">✓</span></td><td><span class="perm-check">✓</span></td><td><span class="perm-check">✓</span></td><td><span class="perm-dash">—</span></td><td><span class="perm-dash">—</span></td>
+          </tr>
+          <tr>
+            <td>Clientes</td>
+            <td><span class="perm-check">✓</span></td><td><span class="perm-check">✓</span></td><td><span class="perm-check">✓</span></td><td><span class="perm-check">✓</span></td><td><span class="perm-dash">—</span></td>
+          </tr>
+          <tr>
+            <td>Proyecciones y contratos</td>
+            <td><span class="perm-check">✓</span></td><td><span class="perm-check">✓</span></td><td><span class="perm-check">✓</span></td><td><span class="perm-dash">—</span></td><td><span class="perm-check">✓</span></td>
+          </tr>
+          <tr>
+            <td>Seguridad y usuarios</td>
+            <td><span class="perm-check">✓</span></td><td><span class="perm-dash">—</span></td><td><span class="perm-dash">—</span></td><td><span class="perm-dash">—</span></td><td><span class="perm-dash">—</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="fieldset">
+      <h4>Autenticación</h4>
+      <div class="desc">Requiere un segundo factor al iniciar sesión para mayor seguridad.</div>
+
+      <div class="setting-row">
+        <div>
+          <div class="title">Autenticación de dos factores (2FA)</div>
+          <div class="desc">Usa una app como Google Authenticator o Authy</div>
+        </div>
+        <label class="switch"><input type="checkbox" id="s2fa" onchange="toggle2FA(this)"><span class="slider"></span></label>
+      </div>
+      <div class="setting-row">
+        <div>
+          <div class="title">Código por SMS</div>
+          <div class="desc">Envío de códigos al +52 81 2345 6789</div>
+        </div>
+        <label class="switch"><input type="checkbox"><span class="slider"></span></label>
+      </div>
+      <div class="setting-row">
+        <div>
+          <div class="title">Cerrar sesión automáticamente</div>
+          <div class="desc">Después de 30 minutos de inactividad</div>
+        </div>
+        <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+      </div>
+      <div class="setting-row">
+        <div>
+          <div class="title">Notificar cada inicio de sesión</div>
+          <div class="desc">Recibir correo cuando alguien acceda a tu cuenta</div>
+        </div>
+        <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+      </div>
+    </div>
+
+    <div class="fieldset">
+      <h4>Contraseña</h4>
+      <div class="desc">Última modificación: hace 3 meses</div>
+      <div class="form-row">
+        <div class="form-field"><label>Contraseña actual</label><input type="password" placeholder="••••••••"></div>
+        <div class="form-field"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-field"><label>Nueva contraseña</label><input type="password" placeholder="Mínimo 10 caracteres"></div>
+        <div class="form-field"><label>Confirmar contraseña</label><input type="password"></div>
+      </div>
+      <p style="font-size: 0.82rem; color: var(--stone); margin-top: 8px;">Incluye al menos una mayúscula, un número y un símbolo.</p>
+      <button class="btn btn-primary" style="margin-top: 16px;" onclick="Jobby.toast('Contraseña actualizada');Jobby.Store.logActivity('Cambió contraseña', null);">Actualizar contraseña</button>
+    </div>
+
+    <div class="fieldset">
+      <h4>Sesiones activas</h4>
+      <div class="desc">Dispositivos donde has iniciado sesión. Si no reconoces alguno, ciérralo inmediatamente.</div>
+
+      <div id="sessionsList"></div>
+
+      <button class="btn btn-secondary" style="margin-top: 10px;" onclick="closeAllOther()">Cerrar todas las otras sesiones</button>
+    </div>
+
+    <div class="fieldset">
+      <h4>Registro de actividad</h4>
+      <div class="desc">Últimas acciones realizadas en tu cuenta.</div>
+      <div id="activityLog"></div>
+    </div>
+
+    <div class="fieldset">
+      <h4 style="color: var(--danger);">Zona de peligro</h4>
+      <div class="desc">Estas acciones son irreversibles.</div>
+      <div style="display:flex; flex-direction: column; gap: 10px; margin-top: 14px;">
+        <button class="btn btn-secondary" style="justify-content: flex-start;" onclick="resetDemo()">Restaurar datos de prueba</button>
+        <button class="btn btn-secondary" style="justify-content: flex-start;" onclick="exportMyData()">Exportar todos mis datos (GDPR)</button>
+        <button class="btn btn-ghost" style="justify-content: flex-start; color: var(--danger);" onclick="Jobby.toast('Te contactaremos para confirmar la eliminación.', 'info');">Eliminar mi cuenta</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="app.js"></script>
+<script>
+(function () {
+  const { Store, fmt, mountSidebar, toast, Modal } = Jobby;
+  mountSidebar('seguridad');
+
+  const u = Store.currentUser();
+
+  // Sesiones (mock pero con el usuario actual real)
+  const sessions = [
+    { id: 's1', device: 'MacBook Pro · Chrome', location: 'San Pedro Garza García, NL', ip: '189.145.221.4', last: new Date().toISOString(), current: true, icon: 'desktop' },
+    { id: 's2', device: 'iPhone 15 · iOS App', location: 'San Pedro Garza García, NL', ip: '189.145.221.4', last: new Date(Date.now() - 3600000 * 4).toISOString(), current: false, icon: 'mobile' },
+    { id: 's3', device: 'iPad · Safari', location: 'Monterrey, NL', ip: '187.156.33.112', last: new Date(Date.now() - 86400000 * 2).toISOString(), current: false, icon: 'tablet' }
+  ];
+
+  function renderSessions() {
+    document.getElementById('sessionsList').innerHTML = sessions.map(s => {
+      const icons = {
+        desktop: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>',
+        mobile: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>',
+        tablet: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>'
+      };
+      return `<div class="session-row ${s.current ? 'current' : ''}">
+        <div class="session-icon">${icons[s.icon]}</div>
+        <div class="session-info">
+          <div class="name">${s.device} ${s.current ? '<span class="badge-current" style="margin-left: 8px;">Sesión actual</span>' : ''}</div>
+          <div class="meta">${s.location} · IP ${s.ip} · ${fmt.relative(s.last)}</div>
+        </div>
+        <div>
+          ${!s.current ? `<button class="btn btn-ghost btn-sm" onclick="closeSession('${s.id}')" style="color: var(--danger);">Cerrar</button>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  window.closeSession = (id) => {
+    const s = sessions.find(x => x.id === id);
+    sessions.splice(sessions.indexOf(s), 1);
+    Store.logActivity('Cerró sesión remota', s.device);
+    toast(`Sesión en ${s.device} cerrada`);
+    renderSessions();
+  };
+
+  window.closeAllOther = () => {
+    const others = sessions.filter(s => !s.current);
+    if (others.length === 0) { toast('No hay otras sesiones activas', 'info'); return; }
+    if (confirm(`¿Cerrar ${others.length} sesiones en otros dispositivos?`)) {
+      sessions.splice(0, sessions.length, ...sessions.filter(s => s.current));
+      Store.logActivity('Cerró todas las sesiones remotas', null);
+      toast(`${others.length} sesiones cerradas`);
+      renderSessions();
+    }
+  };
+
+  window.toggle2FA = (cb) => {
+    if (cb.checked) {
+      Modal.open(`
+        <div class="modal-head">
+          <div><h3>Activar 2FA</h3><div class="sub">Escanea este código con tu app de autenticación</div></div>
+          <button class="modal-close" onclick="Jobby.Modal.close()">✕</button>
+        </div>
+        <div style="text-align:center;padding:20px;">
+          <div style="width:160px;height:160px;margin:0 auto 14px;background:var(--paper);border:1px solid var(--line);border-radius:var(--r-md);display:grid;place-items:center;padding:12px;">
+            <svg viewBox="0 0 100 100" width="140" height="140" fill="#0E1F1A">
+              <rect x="0" y="0" width="18" height="18"/><rect x="4" y="4" width="10" height="10" fill="#F4EFE4"/><rect x="7" y="7" width="4" height="4"/>
+              <rect x="24" y="0" width="4" height="4"/><rect x="30" y="0" width="4" height="4"/><rect x="36" y="0" width="4" height="4"/>
+              <rect x="82" y="0" width="18" height="18"/><rect x="86" y="4" width="10" height="10" fill="#F4EFE4"/><rect x="89" y="7" width="4" height="4"/>
+              <rect x="0" y="82" width="18" height="18"/><rect x="4" y="86" width="10" height="10" fill="#F4EFE4"/><rect x="7" y="89" width="4" height="4"/>
+              <rect x="24" y="24" width="4" height="4"/><rect x="30" y="24" width="4" height="4"/><rect x="40" y="24" width="4" height="4"/><rect x="48" y="24" width="4" height="4"/><rect x="56" y="24" width="4" height="4"/><rect x="64" y="24" width="4" height="4"/><rect x="70" y="24" width="4" height="4"/>
+              <rect x="24" y="30" width="4" height="4"/><rect x="34" y="30" width="4" height="4"/><rect x="44" y="30" width="4" height="4"/><rect x="52" y="30" width="4" height="4"/><rect x="66" y="30" width="4" height="4"/>
+              <rect x="24" y="36" width="4" height="4"/><rect x="30" y="36" width="4" height="4"/><rect x="40" y="36" width="4" height="4"/><rect x="48" y="36" width="4" height="4"/><rect x="58" y="36" width="4" height="4"/><rect x="68" y="36" width="4" height="4"/>
+              <rect x="24" y="44" width="4" height="4"/><rect x="34" y="44" width="4" height="4"/><rect x="50" y="44" width="4" height="4"/><rect x="60" y="44" width="4" height="4"/><rect x="66" y="44" width="4" height="4"/>
+              <rect x="28" y="52" width="4" height="4"/><rect x="40" y="52" width="4" height="4"/><rect x="46" y="52" width="4" height="4"/><rect x="56" y="52" width="4" height="4"/><rect x="64" y="52" width="4" height="4"/><rect x="70" y="52" width="4" height="4"/>
+              <rect x="24" y="60" width="4" height="4"/><rect x="30" y="60" width="4" height="4"/><rect x="42" y="60" width="4" height="4"/><rect x="52" y="60" width="4" height="4"/><rect x="58" y="60" width="4" height="4"/><rect x="68" y="60" width="4" height="4"/>
+              <rect x="24" y="66" width="4" height="4"/><rect x="38" y="66" width="4" height="4"/><rect x="48" y="66" width="4" height="4"/><rect x="54" y="66" width="4" height="4"/><rect x="64" y="66" width="4" height="4"/>
+              <rect x="24" y="72" width="4" height="4"/><rect x="30" y="72" width="4" height="4"/><rect x="40" y="72" width="4" height="4"/><rect x="52" y="72" width="4" height="4"/><rect x="60" y="72" width="4" height="4"/><rect x="66" y="72" width="4" height="4"/><rect x="72" y="72" width="4" height="4"/>
+            </svg>
+          </div>
+          <p style="font-size:0.82rem;color:var(--stone);margin-bottom:8px;">O ingresa este código manualmente:</p>
+          <div style="font-family:var(--mono);letter-spacing:0.2em;font-size:1rem;margin-bottom:20px;">JBSW Y3DP EHPK 3PXP</div>
+          <div class="form-field" style="max-width:200px;margin:0 auto;">
+            <label style="text-align:center;">Código de 6 dígitos</label>
+            <input type="text" id="tfaCode" maxlength="6" placeholder="000000" style="text-align:center;font-family:var(--mono);letter-spacing:0.3em;font-size:1.1rem;">
+          </div>
+        </div>
+        <div class="modal-foot">
+          <button class="btn btn-ghost btn-sm" onclick="cancel2FA()">Cancelar</button>
+          <button class="btn btn-primary btn-sm" onclick="confirm2FA()">Activar</button>
+        </div>
+      `);
+    } else {
+      if (confirm('¿Desactivar 2FA? Tu cuenta será menos segura.')) {
+        Store.logActivity('Desactivó 2FA', null);
+        toast('2FA desactivado', 'info');
+      } else {
+        cb.checked = true;
+      }
+    }
+  };
+
+  window.cancel2FA = () => {
+    document.getElementById('s2fa').checked = false;
+    Modal.close();
+  };
+
+  window.confirm2FA = () => {
+    const code = document.getElementById('tfaCode').value;
+    if (code.length === 6) {
+      Store.logActivity('Activó 2FA', null);
+      toast('Autenticación de dos factores activada');
+      Modal.close();
+    } else {
+      toast('Ingresa el código de 6 dígitos', 'error');
+    }
+  };
+
+  window.resetDemo = () => {
+    if (confirm('¿Restaurar datos de prueba? Se perderán todos los cambios que hayas hecho (facturas, clientes, contratos, etc.).')) {
+      Store.reset();
+      toast('Datos restaurados a los valores iniciales');
+      setTimeout(() => location.reload(), 600);
+    }
+  };
+
+  window.exportMyData = () => {
+    const blob = new Blob([JSON.stringify(Store._db, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'jobby-mis-datos-' + new Date().toISOString().slice(0, 10) + '.json';
+    a.click();
+    toast('Datos exportados como JSON');
+  };
+
+  function renderActivity() {
+    const log = Store.all('activity').slice(0, 15);
+    document.getElementById('activityLog').innerHTML = log.length === 0 ? '<p style="color:var(--stone);font-size:0.88rem;padding:20px 0;">Sin actividad registrada.</p>' :
+      log.map(a => {
+        const user = Store.find('users', a.user);
+        return `<div class="log-row">
+          <div class="time">${fmt.dateTime(a.date)}</div>
+          <div class="who"><span class="av" style="background: linear-gradient(135deg, ${user?.color || '#0F5132'}, #C9A227);">${user?.initials || '?'}</span>${user?.name || 'Sistema'}</div>
+          <div>${a.action}${a.entity ? ` · <span style="font-family:var(--mono);color:var(--stone);">${a.entity}</span>` : ''}</div>
+          <div class="ip">189.145.221.4</div>
+        </div>`;
+      }).join('');
+  }
+
+  /* ── Usuarios ─────────────────────────────────────── */
+  const ROLE_LABEL = { admin: 'Administrador', cfo: 'Dir. Financiero', accountant: 'Contador', sales: 'Ventas', viewer: 'Solo lectura' };
+
+  function renderUsers() {
+    const me = Store.currentUser();
+    document.getElementById('usersList').innerHTML = Store.all('users').map(u => {
+      const inactive = u.status === 'inactive';
+      const isMe = me && u.id === me.id;
+      return `<div class="user-row${inactive ? ' user-inactive' : ''}">
+        <div class="user-av" style="background:linear-gradient(135deg,${u.color || '#0F5132'},#C9A227);">${u.initials || u.name.slice(0,2).toUpperCase()}</div>
+        <div class="user-info">
+          <div class="un">${u.name}${isMe ? ' <span class="badge-current" style="margin-left:6px;">Tú</span>' : ''}</div>
+          <div class="um">${u.email || '—'} · Último acceso: ${u.lastActive ? fmt.relative(u.lastActive) : 'nunca'}</div>
+        </div>
+        <span class="role-chip role-${u.role}">${ROLE_LABEL[u.role] || u.role}</span>
+        <div class="user-actions">
+          <button class="btn btn-ghost btn-sm" onclick="editRole('${u.id}')">Editar</button>
+          ${!isMe ? `<button class="btn btn-ghost btn-sm" style="color:${inactive ? 'var(--moss)' : 'var(--danger)'};" onclick="toggleUser('${u.id}')">${inactive ? 'Activar' : 'Desactivar'}</button>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  window.openInvite = () => {
+    Modal.open(`
+      <div class="modal-head">
+        <div><h3>Invitar usuario</h3><div class="sub">Se enviará un correo con acceso a Jobby</div></div>
+        <button class="modal-close" onclick="Jobby.Modal.close()">✕</button>
+      </div>
+      <div class="form-row">
+        <div class="form-field"><label>Nombre completo</label><input type="text" id="invName" placeholder="Ana García"></div>
+        <div class="form-field"><label>Correo electrónico</label><input type="email" id="invEmail" placeholder="ana@empresa.com"></div>
+      </div>
+      <div class="form-field">
+        <label>Rol</label>
+        <select id="invRole">
+          <option value="viewer">Solo lectura — puede ver pero no editar</option>
+          <option value="sales">Ventas — facturas y clientes propios</option>
+          <option value="accountant" selected>Contador — facturas, pagos y clientes</option>
+          <option value="cfo">Director Financiero — todo excepto usuarios</option>
+          <option value="admin">Administrador — acceso total</option>
+        </select>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-ghost btn-sm" onclick="Jobby.Modal.close()">Cancelar</button>
+        <button class="btn btn-primary btn-sm" onclick="saveInvite()">Enviar invitación</button>
+      </div>
+    `);
+    setTimeout(() => document.getElementById('invName')?.focus(), 80);
+  };
+
+  window.saveInvite = () => {
+    const name = document.getElementById('invName').value.trim();
+    const email = document.getElementById('invEmail').value.trim();
+    const role = document.getElementById('invRole').value;
+    if (!name || !email) { toast('Ingresa nombre y correo', 'error'); return; }
+    const initials = name.split(' ').filter(w => w.length > 1).map(w => w[0]).join('').slice(0, 2).toUpperCase();
+    Store.add('users', { name, email, role, initials, color: '#0F5132', status: 'active', lastLogin: null });
+    Store.logActivity('Invitó a ' + name, role);
+    Modal.close();
+    toast(`Invitación enviada a ${email}`);
+    renderUsers();
+  };
+
+  window.editRole = (id) => {
+    const u = Store.find('users', id);
+    Modal.open(`
+      <div class="modal-head">
+        <div><h3>${u.name}</h3><div class="sub">Rol actual: ${ROLE_LABEL[u.role] || u.role}</div></div>
+        <button class="modal-close" onclick="Jobby.Modal.close()">✕</button>
+      </div>
+      <div class="form-field" style="margin-top:8px;">
+        <label>Cambiar rol</label>
+        <select id="roleEdit">
+          <option value="viewer"     ${u.role==='viewer'     ?'selected':''}>Solo lectura</option>
+          <option value="sales"      ${u.role==='sales'      ?'selected':''}>Ventas</option>
+          <option value="accountant" ${u.role==='accountant' ?'selected':''}>Contador</option>
+          <option value="cfo"        ${u.role==='cfo'        ?'selected':''}>Director Financiero</option>
+          <option value="admin"      ${u.role==='admin'      ?'selected':''}>Administrador</option>
+        </select>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-ghost btn-sm" onclick="Jobby.Modal.close()">Cancelar</button>
+        <button class="btn btn-primary btn-sm" onclick="saveRole('${id}')">Guardar</button>
+      </div>
+    `);
+  };
+
+  window.saveRole = (id) => {
+    const role = document.getElementById('roleEdit').value;
+    const u = Store.find('users', id);
+    Store.update('users', id, { role });
+    Store.logActivity('Cambió rol', `${u.name} → ${role}`);
+    Modal.close();
+    toast(`Rol de ${u.name} actualizado`);
+    renderUsers();
+  };
+
+  window.toggleUser = (id) => {
+    const u = Store.find('users', id);
+    const next = u.status === 'inactive' ? 'active' : 'inactive';
+    Store.update('users', id, { status: next });
+    Store.logActivity(next === 'inactive' ? 'Desactivó usuario' : 'Activó usuario', u.name);
+    toast(`${u.name} ${next === 'inactive' ? 'desactivado' : 'reactivado'}`);
+    renderUsers();
+  };
+
+  renderUsers();
+  renderSessions();
+  renderActivity();
+})();
+</script>
+<script src="demo-aviso.js"></script>
+</body>
+</html>

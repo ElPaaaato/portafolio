@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jobby — Finanzas claras para tu empresa</title>
+<meta name="description" content="La plataforma de facturación y control financiero hecha para PyMEs mexicanas. Conecta tu SAT, tu banco, y toma decisiones con datos reales.">
+<link rel="stylesheet" href="shared.css">
+<style>
+  /* ============ HERO ============ */
+  .hero {
+    padding: 80px 0 100px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -20%;
+    right: -10%;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(184, 98, 46, 0.12) 0%, transparent 60%);
+    border-radius: 50%;
+    z-index: 0;
+    pointer-events: none;
+  }
+  .hero-grid {
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 64px;
+    align-items: center;
+    position: relative;
+    z-index: 1;
+  }
+  .hero h1 {
+    margin-bottom: 24px;
+  }
+  .hero h1 .accent {
+    font-style: italic;
+    color: var(--moss);
+    position: relative;
+  }
+  .hero h1 .accent::after {
+    content: '';
+    position: absolute;
+    left: 0; bottom: 2px;
+    width: 100%; height: 10px;
+    background: var(--amber);
+    opacity: 0.35;
+    z-index: -1;
+    border-radius: 2px;
+  }
+  .hero-lede {
+    font-size: 1.15rem;
+    color: var(--slate);
+    max-width: 520px;
+    margin-bottom: 32px;
+  }
+  .hero-cta { display: flex; gap: 12px; margin-bottom: 28px; }
+  .hero-note {
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    color: var(--stone);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .hero-note .dot {
+    width: 6px; height: 6px;
+    background: var(--success);
+    border-radius: 50%;
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  /* Mockup hero card */
+  .hero-mock {
+    position: relative;
+    perspective: 1600px;
+  }
+  .mock-card {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--r-xl);
+    padding: 24px;
+    box-shadow: var(--shadow-lg);
+    transform: rotateY(-6deg) rotateX(4deg);
+    transition: transform 600ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .mock-card:hover { transform: rotateY(-3deg) rotateX(2deg); }
+  .mock-head { display: flex; justify-content: space-between; margin-bottom: 20px; align-items: baseline; }
+  .mock-head .label { font-family: var(--mono); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--stone); }
+  .mock-head .pill { font-family: var(--mono); font-size: 0.72rem; background: rgba(47, 125, 79, 0.12); color: var(--success); padding: 3px 10px; border-radius: 999px; }
+  .mock-bignum {
+    font-family: var(--serif);
+    font-size: 2.8rem;
+    color: var(--ink);
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+    margin-bottom: 8px;
+  }
+  .mock-delta { font-family: var(--mono); font-size: 0.82rem; color: var(--success); margin-bottom: 28px; }
+
+  .mock-chart {
+    height: 100px;
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    margin-bottom: 24px;
+    padding: 0 4px;
+  }
+  .bar {
+    flex: 1;
+    background: linear-gradient(180deg, var(--moss) 0%, var(--sage) 100%);
+    border-radius: 4px 4px 0 0;
+    opacity: 0.85;
+    transition: all 200ms;
+  }
+  .bar:nth-child(7) { background: linear-gradient(180deg, var(--ochre) 0%, var(--amber) 100%); opacity: 1; }
+
+  .mock-rows { border-top: 1px solid var(--line); }
+  .mock-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 0.85rem;
+  }
+  .mock-row:last-child { border-bottom: 0; }
+  .mock-row .who { color: var(--slate); display: flex; gap: 10px; align-items: center; }
+  .mock-row .dt { font-family: var(--mono); color: var(--stone); font-size: 0.78rem; }
+  .mock-row .amt { font-family: var(--mono); color: var(--ink); font-weight: 500; font-variant-numeric: tabular-nums; }
+  .init-sm { width: 22px; height: 22px; background: var(--bone); border-radius: 4px; display: grid; place-items: center; font-family: var(--mono); font-size: 0.65rem; font-weight: 600; color: var(--moss); }
+
+  /* Floating accent card */
+  .mock-float {
+    position: absolute;
+    right: -24px;
+    bottom: -20px;
+    background: var(--ink);
+    color: var(--cream);
+    padding: 18px 22px;
+    border-radius: var(--r-lg);
+    box-shadow: var(--shadow-lg);
+    max-width: 200px;
+  }
+  .mock-float .pct {
+    font-family: var(--serif);
+    font-size: 1.8rem;
+    color: var(--amber);
+  }
+  .mock-float .lbl {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: rgba(244, 239, 228, 0.6);
+    margin-top: 2px;
+  }
+
+  /* ============ TRUST BAR ============ */
+  .trust {
+    padding: 40px 0;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    background: var(--bone);
+  }
+  .trust-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 32px;
+    flex-wrap: wrap;
+  }
+  .trust-label {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--stone);
+  }
+  .trust-logos {
+    display: flex;
+    gap: 40px;
+    align-items: center;
+    flex-wrap: wrap;
+    font-family: var(--serif);
+    color: var(--stone);
+    font-size: 1.1rem;
+    font-style: italic;
+  }
+
+  /* ============ FEATURES ============ */
+  .features {
+    padding: 120px 0;
+  }
+  .section-head {
+    max-width: 720px;
+    margin-bottom: 64px;
+  }
+  .section-head h2 { margin-bottom: 16px; }
+  .section-head p { font-size: 1.08rem; color: var(--slate); }
+
+  .feat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    overflow: hidden;
+  }
+  .feat {
+    background: var(--paper);
+    padding: 32px;
+    transition: background 200ms;
+    position: relative;
+  }
+  .feat:hover { background: var(--bone); }
+  .feat-num {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--ochre);
+    letter-spacing: 0.12em;
+    margin-bottom: 20px;
+  }
+  .feat-icon {
+    width: 44px; height: 44px;
+    border-radius: var(--r-md);
+    background: var(--cream);
+    border: 1px solid var(--line);
+    display: grid;
+    place-items: center;
+    margin-bottom: 18px;
+  }
+  .feat-icon svg { width: 22px; height: 22px; color: var(--moss); stroke: var(--moss); }
+  .feat h4 {
+    font-family: var(--serif);
+    font-size: 1.2rem;
+    font-weight: 500;
+    color: var(--ink);
+    margin-bottom: 8px;
+  }
+  .feat p {
+    font-size: 0.9rem;
+    color: var(--stone);
+    margin: 0;
+    line-height: 1.5;
+  }
+
+  @media (max-width: 1000px) {
+    .feat-grid { grid-template-columns: repeat(2, 1fr); }
+    .hero-grid { grid-template-columns: 1fr; gap: 48px; }
+    .mock-float { display: none; }
+  }
+  @media (max-width: 600px) {
+    .feat-grid { grid-template-columns: 1fr; }
+  }
+
+  /* ============ SAT / BANKING SECTION ============ */
+  .integrations {
+    padding: 120px 0;
+    background: var(--ink);
+    color: var(--cream);
+    position: relative;
+    overflow: hidden;
+  }
+  .integrations::before {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 800px; height: 800px;
+    background: radial-gradient(circle, rgba(217, 144, 80, 0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .integrations h2 { color: var(--cream); }
+  .integrations .eyebrow { color: var(--amber); }
+  .int-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+    margin-top: 64px;
+    position: relative;
+    z-index: 1;
+  }
+  .int-card {
+    background: rgba(244, 239, 228, 0.04);
+    border: 1px solid rgba(244, 239, 228, 0.1);
+    border-radius: var(--r-lg);
+    padding: 36px;
+    backdrop-filter: blur(8px);
+  }
+  .int-card h3 {
+    font-family: var(--serif);
+    color: var(--cream);
+    font-size: 1.6rem;
+    margin-bottom: 16px;
+  }
+  .int-card p { color: rgba(244, 239, 228, 0.7); margin-bottom: 24px; }
+  .int-list { list-style: none; padding: 0; margin: 0; }
+  .int-list li {
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(244, 239, 228, 0.08);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.92rem;
+    color: rgba(244, 239, 228, 0.85);
+  }
+  .int-list li:last-child { border: 0; }
+  .check {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: var(--moss-2);
+    color: var(--cream);
+    display: grid; place-items: center;
+    font-size: 10px;
+    flex-shrink: 0;
+  }
+  @media (max-width: 800px) { .int-grid { grid-template-columns: 1fr; gap: 24px; } }
+
+  /* ============ PRICING ============ */
+  .pricing { padding: 120px 0; }
+  .price-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  .price {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    padding: 36px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  .price.featured {
+    background: var(--ink);
+    color: var(--cream);
+    border-color: var(--ink);
+    position: relative;
+  }
+  .price.featured::before {
+    content: 'MÁS POPULAR';
+    position: absolute;
+    top: 16px; right: 16px;
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.14em;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: var(--amber);
+    color: var(--ink);
+    font-weight: 600;
+  }
+  .price h3 { font-family: var(--serif); font-size: 1.3rem; margin: 0; }
+  .price.featured h3 { color: var(--cream); }
+  .price .amt {
+    font-family: var(--serif);
+    font-size: 3rem;
+    color: var(--ink);
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+  .price.featured .amt { color: var(--cream); }
+  .price .amt .per {
+    font-size: 0.9rem;
+    color: var(--stone);
+    font-family: var(--sans);
+  }
+  .price.featured .amt .per { color: rgba(244, 239, 228, 0.6); }
+  .price .desc { font-size: 0.9rem; color: var(--stone); }
+  .price.featured .desc { color: rgba(244, 239, 228, 0.7); }
+  .price ul { list-style: none; margin: 0; padding: 0; }
+  .price ul li {
+    padding: 10px 0;
+    font-size: 0.88rem;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  .price ul li::before {
+    content: '→';
+    color: var(--ochre);
+    font-family: var(--mono);
+    flex-shrink: 0;
+  }
+  .price.featured ul li::before { color: var(--amber); }
+  @media (max-width: 800px) { .price-grid { grid-template-columns: 1fr; } }
+
+  /* ============ FAQ ============ */
+  .faq { padding: 80px 0 120px; }
+  .faq-list { display: flex; flex-direction: column; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden; }
+  .faq details { background: var(--paper); }
+  .faq summary {
+    padding: 22px 28px;
+    cursor: pointer;
+    font-family: var(--serif);
+    font-size: 1.1rem;
+    color: var(--ink);
+    list-style: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .faq summary::-webkit-details-marker { display: none; }
+  .faq summary::after {
+    content: '+';
+    font-family: var(--mono);
+    font-size: 1.4rem;
+    color: var(--ochre);
+    transition: transform 200ms;
+  }
+  .faq details[open] summary::after { transform: rotate(45deg); }
+  .faq details[open] { background: var(--bone); }
+  .faq-body {
+    padding: 0 28px 22px;
+    color: var(--slate);
+    font-size: 0.94rem;
+    max-width: 720px;
+  }
+
+  /* ============ FINAL CTA ============ */
+  .final-cta {
+    padding: 100px 0;
+    text-align: center;
+    background:
+      linear-gradient(180deg, var(--cream) 0%, var(--bone) 100%);
+    border-top: 1px solid var(--line);
+  }
+  .final-cta h2 { font-size: clamp(2rem, 4vw, 3.6rem); margin-bottom: 20px; max-width: 720px; margin-left: auto; margin-right: auto; }
+  .final-cta p { color: var(--slate); font-size: 1.1rem; margin-bottom: 32px; }
+
+  /* ============ FOOTER ============ */
+  footer {
+    background: var(--ink);
+    color: rgba(244, 239, 228, 0.7);
+    padding: 64px 0 32px;
+  }
+  .foot-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    gap: 48px;
+    margin-bottom: 48px;
+  }
+  footer .logo { color: var(--cream); }
+  footer .logo .dot { color: var(--amber); }
+  footer h5 {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--amber);
+    margin: 0 0 16px;
+    font-weight: 500;
+  }
+  footer ul { list-style: none; padding: 0; margin: 0; }
+  footer ul li { padding: 6px 0; }
+  footer ul a { color: rgba(244, 239, 228, 0.7); font-size: 0.9rem; }
+  footer ul a:hover { color: var(--cream); }
+  .foot-bot {
+    border-top: 1px solid rgba(244, 239, 228, 0.1);
+    padding-top: 24px;
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    color: rgba(244, 239, 228, 0.5);
+  }
+  @media (max-width: 800px) { .foot-grid { grid-template-columns: 1fr 1fr; } }
+</style>
+</head>
+<body>
+
+<!-- ========== NAV ========== -->
+<nav class="nav">
+  <div class="container nav-inner">
+    <a href="index.html" class="logo" aria-label="Jobby">
+      <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M4 20 C 10 8, 14 24, 20 12 S 28 20, 28 20" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+        <circle cx="28" cy="10" r="2.5" fill="#B8622E"/>
+      </svg>
+      Jobby<span class="dot">.</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="#producto">Producto</a></li>
+      <li><a href="#sat">SAT &amp; Bancos</a></li>
+      <li><a href="#precios">Precios</a></li>
+      <li><a href="#faq">Preguntas</a></li>
+    </ul>
+    <div class="nav-cta">
+      <a href="login.html" class="btn btn-ghost">Iniciar sesión</a>
+      <a href="login.html" class="btn btn-primary">Empezar gratis</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ========== HERO ========== -->
+<section class="hero">
+  <div class="container hero-grid">
+    <div>
+      <div class="eyebrow rise">Hecho en México · Para PyMEs</div>
+      <h1 class="rise rise-1" style="margin-top: 18px;">
+        Finanzas <span class="accent">claras</span>.<br>
+        Negocios fuertes.
+      </h1>
+      <p class="hero-lede rise rise-2">
+        Jobby une tu facturación, pagos y flujo de efectivo en un solo lugar.
+        Conecta tu SAT, tus bancos, y deja de perseguir cobros en hojas de cálculo
+        que nadie actualiza.
+      </p>
+      <div class="hero-cta rise rise-3">
+        <a href="login.html" class="btn btn-primary">
+          Crear cuenta
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </a>
+        <a href="#producto" class="btn btn-secondary">Ver cómo funciona</a>
+      </div>
+      <div class="hero-note rise rise-4">
+        <span class="dot"></span>
+        14 días gratis · Sin tarjeta · Cancela cuando quieras
+      </div>
+    </div>
+
+    <div class="hero-mock rise rise-2">
+      <div class="mock-card">
+        <div class="mock-head">
+          <div>
+            <div class="label">Cuentas por cobrar</div>
+            <div class="mock-bignum">$ 1,284,560<span class="cents">.40</span></div>
+            <div class="mock-delta">▲ 12.4% vs mes anterior</div>
+          </div>
+          <span class="pill">Al día</span>
+        </div>
+
+        <div class="mock-chart" aria-hidden="true">
+          <div class="bar" style="height: 35%"></div>
+          <div class="bar" style="height: 52%"></div>
+          <div class="bar" style="height: 40%"></div>
+          <div class="bar" style="height: 68%"></div>
+          <div class="bar" style="height: 48%"></div>
+          <div class="bar" style="height: 72%"></div>
+          <div class="bar" style="height: 88%"></div>
+        </div>
+
+        <div class="mock-rows">
+          <div class="mock-row">
+            <span class="who"><span class="init-sm">GM</span> Grupo Monterrey</span>
+            <span class="dt">Hoy</span>
+            <span class="amt">+ $48,200</span>
+          </div>
+          <div class="mock-row">
+            <span class="who"><span class="init-sm">CR</span> Constructora Real</span>
+            <span class="dt">Ayer</span>
+            <span class="amt">+ $124,800</span>
+          </div>
+          <div class="mock-row">
+            <span class="who"><span class="init-sm">TX</span> Textiles del Norte</span>
+            <span class="dt">12 Abr</span>
+            <span class="amt">+ $32,500</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="mock-float">
+        <div class="pct">-4.2 días</div>
+        <div class="lbl">Tiempo promedio de cobro</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== TRUST ========== -->
+<section class="trust">
+  <div class="container trust-inner">
+    <div class="trust-label">Empresas que ya confían en Jobby</div>
+    <div class="trust-logos">
+      <span>Grupo Textil MX</span>
+      <span>Constructora Lerma</span>
+      <span>Agro del Bajío</span>
+      <span>Logística Norte</span>
+      <span>Distribuidora Zaragoza</span>
+    </div>
+  </div>
+</section>
+
+<!-- ========== FEATURES ========== -->
+<section class="features" id="producto">
+  <div class="container">
+    <div class="section-head">
+      <div class="eyebrow">El producto</div>
+      <h2 style="margin-top: 14px;">Todo lo que hacías en Excel,<br>ahora automático y en tiempo real.</h2>
+      <p>Ocho capacidades que sustituyen procesos manuales, reducen errores de captura y te dan una vista financiera que sí puedes usar para decidir.</p>
+    </div>
+
+    <div class="feat-grid">
+      <div class="feat">
+        <div class="feat-num">01</div>
+        <div class="feat-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <h4>Usuarios y roles</h4>
+        <p>Dueño, contador, administrador, vendedor. Cada quien ve solo lo que le corresponde, con permisos granulares.</p>
+      </div>
+
+      <div class="feat">
+        <div class="feat-num">02</div>
+        <div class="feat-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+        </div>
+        <h4>Captura y gestión de facturas</h4>
+        <p>Sube CFDI en XML, PDF o captura manual. Clasificación automática por cliente, emisión y periodo.</p>
+      </div>
+
+      <div class="feat">
+        <div class="feat-num">03</div>
+        <div class="feat-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        </div>
+        <h4>Dashboard financiero</h4>
+        <p>Ingresos, egresos, flujo de caja y cartera vencida. Todo en una vista viva que se actualiza sola.</p>
+      </div>
+
+      <div class="feat">
+        <div class="feat-num">04</div>
+        <div class="feat-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        </div>
+        <h4>Control de pagos</h4>
+        <p>Status por factura: pagada, pendiente, vencida, parcial. Con recordatorios automáticos a clientes morosos.</p>
+      </div>
+
+      <div class="feat">
+        <div class="feat-num">05</div>
+        <div class="feat-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        </div>
+        <h4>Reportes y exportación</h4>
+        <p>Descarga en Excel, PDF o contabilidad electrónica. Reportes predefinidos o armados a tu medida.</p>
+      </div>
+
+      <div class="feat">
+        <div class="feat-num">06</div>
+        <div class="feat-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6v6H9z"/></svg>
+        </div>
+        <h4>Conexión SAT (CFDI)</h4>
+        <p>Sincroniza automáticamente tus facturas emitidas y recibidas directo del portal del SAT, con sello y validación.</p>
+      </div>
+
+      <div class="feat">
+        <div class="feat-num">07</div>
+        <div class="feat-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+        </div>
+        <h4>Integración bancaria</h4>
+        <p>Conciliación automática con BBVA, Santander, Banorte, HSBC y más. Cada depósito se empareja con su factura.</p>
+      </div>
+
+      <div class="feat">
+        <div class="feat-num">08</div>
+        <div class="feat-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        </div>
+        <h4>Notificaciones</h4>
+        <p>Alertas por correo y WhatsApp. Cuando vence una factura, cuando entra un pago, cuando pasa algo importante.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== INTEGRATIONS ========== -->
+<section class="integrations" id="sat">
+  <div class="container">
+    <div class="eyebrow">Integraciones nativas</div>
+    <h2 style="margin-top: 14px; max-width: 720px;">El SAT y tu banco, hablándose por fin.</h2>
+
+    <div class="int-grid">
+      <div class="int-card">
+        <h3>SAT &amp; CFDI 4.0</h3>
+        <p>Conecta tu e.firma una sola vez. Jobby descarga tus facturas emitidas y recibidas todos los días, valida sellos y las clasifica automáticamente.</p>
+        <ul class="int-list">
+          <li><span class="check">✓</span> Descarga masiva de CFDI emitidos y recibidos</li>
+          <li><span class="check">✓</span> Validación de sellos y vigencia en tiempo real</li>
+          <li><span class="check">✓</span> Complementos de pago (REP) generados</li>
+          <li><span class="check">✓</span> Alertas de facturas canceladas por el emisor</li>
+          <li><span class="check">✓</span> Contabilidad electrónica lista para subir</li>
+        </ul>
+      </div>
+
+      <div class="int-card">
+        <h3>Bancos mexicanos</h3>
+        <p>Importa tus movimientos vía Open Finance o archivos OFX/MT940. Cada depósito se empareja con la factura correspondiente — sin que toques nada.</p>
+        <ul class="int-list">
+          <li><span class="check">✓</span> BBVA, Santander, Banorte, HSBC, Banregio</li>
+          <li><span class="check">✓</span> Conciliación automática factura ↔ depósito</li>
+          <li><span class="check">✓</span> Detección de pagos parciales y divisas</li>
+          <li><span class="check">✓</span> Histórico completo de movimientos</li>
+          <li><span class="check">✓</span> Exportable a tu contador o ERP</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== PRICING ========== -->
+<section class="pricing" id="precios">
+  <div class="container">
+    <div class="section-head" style="text-align: center; margin: 0 auto 64px;">
+      <div class="eyebrow">Precios transparentes</div>
+      <h2 style="margin-top: 14px;">Un plan para cada etapa.</h2>
+      <p>Sin letras chiquitas. Todos los planes incluyen la conexión al SAT y soporte por WhatsApp.</p>
+    </div>
+
+    <div class="price-grid">
+      <div class="price">
+        <h3>Esencial</h3>
+        <p class="desc">Para freelancers y negocios que apenas arrancan con su facturación.</p>
+        <div class="amt">$499<span class="per"> / mes</span></div>
+        <ul>
+          <li>Hasta 100 facturas/mes</li>
+          <li>1 RFC emisor</li>
+          <li>2 usuarios</li>
+          <li>Dashboard básico</li>
+          <li>Conexión SAT</li>
+        </ul>
+        <a href="login.html" class="btn btn-secondary" style="justify-content: center;">Empezar</a>
+      </div>
+
+      <div class="price featured">
+        <h3>Profesional</h3>
+        <p class="desc">Para PyMEs que ya tienen volumen y necesitan control real.</p>
+        <div class="amt">$1,499<span class="per"> / mes</span></div>
+        <ul>
+          <li>Hasta 1,000 facturas/mes</li>
+          <li>3 RFCs emisores</li>
+          <li>10 usuarios con roles</li>
+          <li>Conexión SAT + 3 bancos</li>
+          <li>WhatsApp y correo automático</li>
+          <li>Reportes avanzados</li>
+          <li>Exportación contabilidad electrónica</li>
+        </ul>
+        <a href="login.html" class="btn btn-primary" style="background: var(--amber); color: var(--ink); justify-content: center;">Empezar</a>
+      </div>
+
+      <div class="price">
+        <h3>Corporativo</h3>
+        <p class="desc">Para grupos empresariales con múltiples razones sociales.</p>
+        <div class="amt">A medida</div>
+        <ul>
+          <li>Facturas ilimitadas</li>
+          <li>RFCs ilimitados</li>
+          <li>Usuarios ilimitados</li>
+          <li>Todos los bancos</li>
+          <li>SLA dedicado</li>
+          <li>API y webhooks</li>
+          <li>Gestor de cuenta</li>
+        </ul>
+        <a href="#" class="btn btn-secondary" style="justify-content: center;">Hablar con ventas</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== FAQ ========== -->
+<section class="faq" id="faq">
+  <div class="container">
+    <div class="section-head">
+      <div class="eyebrow">Preguntas frecuentes</div>
+      <h2 style="margin-top: 14px;">Lo que seguro te estás preguntando.</h2>
+    </div>
+
+    <div class="faq-list">
+      <details open>
+        <summary>¿Qué tan seguro es conectar mi e.firma?</summary>
+        <div class="faq-body">Nunca guardamos tu e.firma ni tu contraseña. Usamos el protocolo oficial de descarga masiva del SAT con certificados temporales que tú autorizas y puedes revocar en cualquier momento. Toda la comunicación va cifrada bajo estándares bancarios (AES-256 en reposo, TLS 1.3 en tránsito).</div>
+      </details>
+      <details>
+        <summary>¿Necesito despedir a mi contador?</summary>
+        <div class="faq-body">Para nada. Jobby no reemplaza a tu contador, le quita trabajo tedioso de captura para que pueda enfocarse en estrategia fiscal. De hecho, puedes invitar a tu contador con un rol específico para que tenga acceso a todo sin líos.</div>
+      </details>
+      <details>
+        <summary>¿Puedo migrar desde Excel o Google Sheets?</summary>
+        <div class="faq-body">Sí. Te ayudamos gratis en los primeros 14 días a subir tu histórico de facturas y cuentas por cobrar. Acepta archivos CSV, XLSX y las plantillas más comunes del mercado.</div>
+      </details>
+      <details>
+        <summary>¿Funciona para empresas con varias razones sociales?</summary>
+        <div class="faq-body">Sí, el plan Profesional soporta hasta 3 RFCs y el Corporativo no tiene límite. Manejas todo desde una sola cuenta con reportes consolidados o separados por razón social.</div>
+      </details>
+      <details>
+        <summary>¿Qué pasa si cancelo?</summary>
+        <div class="faq-body">Tus datos son tuyos. Puedes exportar todo tu histórico en cualquier momento y cancelar sin penalización. Guardamos tus datos 90 días por si cambias de opinión.</div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ========== FINAL CTA ========== -->
+<section class="final-cta">
+  <div class="container">
+    <div class="eyebrow">Empieza hoy</div>
+    <h2 style="margin-top: 14px;">Deja de perseguir cobros.<br><em style="color: var(--moss);">Empieza a dirigir.</em></h2>
+    <p>14 días gratis. Sin tarjeta. Implementación asistida incluida.</p>
+    <a href="login.html" class="btn btn-primary">
+      Crear cuenta
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+    </a>
+  </div>
+</section>
+
+<!-- ========== FOOTER ========== -->
+<footer>
+  <div class="container">
+    <div class="foot-grid">
+      <div>
+        <a href="index.html" class="logo" style="margin-bottom: 16px;">
+          <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M4 20 C 10 8, 14 24, 20 12 S 28 20, 28 20" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+            <circle cx="28" cy="10" r="2.5" fill="#D99050"/>
+          </svg>
+          Jobby<span class="dot">.</span>
+        </a>
+        <p style="max-width: 340px; font-size: 0.9rem;">La plataforma financiera para PyMEs mexicanas que están cansadas de perseguir cobros en hojas de cálculo.</p>
+      </div>
+      <div>
+        <h5>Producto</h5>
+        <ul>
+          <li><a href="#producto">Funciones</a></li>
+          <li><a href="#sat">Integraciones</a></li>
+          <li><a href="#precios">Precios</a></li>
+          <li><a href="dashboard.html">Dashboard demo</a></li>
+        </ul>
+      </div>
+      <div>
+        <h5>Empresa</h5>
+        <ul>
+          <li><a href="#">Sobre nosotros</a></li>
+          <li><a href="#">Blog</a></li>
+          <li><a href="#">Clientes</a></li>
+          <li><a href="#">Contacto</a></li>
+        </ul>
+      </div>
+      <div>
+        <h5>Legal</h5>
+        <ul>
+          <li><a href="#">Términos</a></li>
+          <li><a href="#">Privacidad</a></li>
+          <li><a href="#">Aviso legal</a></li>
+          <li><a href="#">Seguridad</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-bot">
+      <span>© 2026 Jobby · Monterrey, México</span>
+      <span>Hecho con cuidado para PyMEs mexicanas</span>
+    </div>
+  </div>
+</footer>
+
+<script src="demo-aviso.js"></script>
+</body>
+</html>

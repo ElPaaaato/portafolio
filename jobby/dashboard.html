@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard · Jobby</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  .dash-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 24px; }
+  @media (max-width: 1100px) { .dash-grid { grid-template-columns: 1fr; } }
+  .flow-card { background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 24px; }
+  .flow-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
+  .flow-head h3 { font-size: 1.15rem; margin-bottom: 4px; }
+  .flow-head .sub { font-size: 0.85rem; color: var(--stone); font-family: var(--mono); }
+  .chart-svg { width: 100%; height: 260px; display: block; }
+  .chart-legend { display: flex; gap: 24px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line); }
+  .legend-item { display: flex; gap: 8px; align-items: center; font-size: 0.85rem; color: var(--slate); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 2px; }
+  .aging-card { background: var(--ink); color: var(--cream); border-radius: var(--r-lg); padding: 24px; position: relative; overflow: hidden; }
+  .aging-card::before { content: ''; position: absolute; top: -40%; right: -20%; width: 300px; height: 300px; background: radial-gradient(circle, rgba(217, 144, 80, 0.15), transparent 70%); pointer-events: none; }
+  .aging-card .label { font-family: var(--mono); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--amber); margin-bottom: 8px; }
+  .aging-card .big { font-family: var(--serif); font-size: 2.4rem; line-height: 1; color: var(--cream); margin-bottom: 6px; font-variant-numeric: tabular-nums; }
+  .aging-card .sub { color: rgba(244, 239, 228, 0.6); font-size: 0.85rem; margin-bottom: 24px; }
+  .aging-bar { display: flex; height: 8px; border-radius: 4px; overflow: hidden; background: rgba(244, 239, 228, 0.08); margin-bottom: 16px; }
+  .aging-seg { height: 100%; }
+  .aging-rows { list-style: none; padding: 0; margin: 0; position: relative; z-index: 1; }
+  .aging-rows li { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(244, 239, 228, 0.08); font-size: 0.88rem; }
+  .aging-rows li:last-child { border: 0; }
+  .aging-rows .dot { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 10px; }
+  .aging-rows .who { color: rgba(244, 239, 228, 0.85); display: flex; align-items: center; }
+  .aging-rows .val { font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--cream); }
+  .quick-actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+  @media (max-width: 800px) { .quick-actions { grid-template-columns: 1fr 1fr; } }
+  .qa { background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-md); padding: 16px 18px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: all 150ms; text-decoration: none; color: inherit; }
+  .qa:hover { background: var(--bone); border-color: var(--ink); transform: translateY(-1px); }
+  .qa-ic { width: 36px; height: 36px; border-radius: 8px; background: var(--cream); display: grid; place-items: center; color: var(--moss); flex-shrink: 0; }
+  .qa-ic svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+  .qa .qa-title { font-size: 0.9rem; color: var(--ink); font-weight: 500; }
+  .qa .qa-sub { font-size: 0.78rem; color: var(--stone); font-family: var(--mono); }
+  .alert-strip { background: linear-gradient(90deg, rgba(184, 98, 46, 0.08), rgba(184, 98, 46, 0.02)); border: 1px solid rgba(184, 98, 46, 0.25); border-left: 3px solid var(--ochre); border-radius: var(--r-md); padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+  .alert-strip .msg { display: flex; gap: 12px; align-items: center; font-size: 0.9rem; }
+  .alert-strip .icon-warn { width: 28px; height: 28px; border-radius: 50%; background: var(--ochre); color: var(--cream); display: grid; place-items: center; font-family: var(--serif); font-weight: 500; font-style: italic; }
+  .alert-strip .msg strong { color: var(--ink); }
+  .events-row { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+  @media (max-width: 1100px) { .events-row { grid-template-columns: 1fr; } }
+  .events-card { background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 24px; }
+  .events-card h3 { font-size: 1.15rem; margin-bottom: 4px; }
+  .events-card .sub { font-size: 0.85rem; color: var(--stone); font-family: var(--mono); margin-bottom: 20px; }
+  .event-item { display: grid; grid-template-columns: 60px 1fr auto; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--line); align-items: center; }
+  .event-item:last-child { border: 0; padding-bottom: 0; }
+  .event-date { text-align: center; padding: 8px; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--cream); }
+  .event-date .d { font-family: var(--serif); font-size: 1.3rem; color: var(--ink); line-height: 1; }
+  .event-date .m { font-family: var(--mono); font-size: 0.65rem; text-transform: uppercase; color: var(--stone); margin-top: 2px; }
+  .event-info .t { color: var(--ink); font-size: 0.95rem; margin-bottom: 2px; }
+  .event-info .d { color: var(--stone); font-size: 0.82rem; font-family: var(--mono); }
+  .event-amt { font-family: var(--mono); color: var(--ink); font-weight: 500; font-variant-numeric: tabular-nums; }
+  .sync-dot { width: 8px; height: 8px; background: var(--success); border-radius: 50%; display: inline-block; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <aside class="sidebar"></aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="title">
+        <div class="eyebrow">Panel principal</div>
+        <h1 id="greet" style="margin-top: 8px;">Hola.</h1>
+        <p id="today"></p>
+      </div>
+      <div class="topbar-actions">
+        <div class="search">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input type="text" placeholder="Buscar factura, cliente, RFC…" id="searchInput" autocomplete="off">
+          <div class="search-results" id="searchResults"></div>
+        </div>
+        <div class="notif-wrap" id="notifWrap">
+          <button class="notif-btn" id="notifBtn" aria-label="Alertas">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <span class="notif-badge" id="notifBadge" style="display:none"></span>
+          </button>
+          <div class="notif-panel" id="notifPanel"></div>
+        </div>
+        <a href="facturas.html?new=1" class="btn btn-primary btn-sm">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Nueva factura
+        </a>
+      </div>
+    </div>
+
+    <div id="alertStrip"></div>
+
+    <div class="kpis">
+      <div class="kpi rise rise-1 kpi-accent">
+        <div class="kpi-label">Facturado este mes</div>
+        <div class="kpi-value" id="kpiInvoiced">—</div>
+        <div class="kpi-delta" id="kpiInvoicedDelta"></div>
+      </div>
+      <div class="kpi rise rise-2">
+        <div class="kpi-label">Por cobrar</div>
+        <div class="kpi-value" id="kpiReceivable">—</div>
+        <div class="kpi-delta" id="kpiReceivableDelta"></div>
+      </div>
+      <div class="kpi rise rise-3">
+        <div class="kpi-label">Cobrado este mes</div>
+        <div class="kpi-value" id="kpiPaid">—</div>
+        <div class="kpi-delta up">en tu cuenta</div>
+      </div>
+      <div class="kpi rise rise-4">
+        <div class="kpi-label">Vencido</div>
+        <div class="kpi-value" id="kpiOverdue" style="color: var(--danger);">—</div>
+        <div class="kpi-delta down" id="kpiOverdueDelta"></div>
+      </div>
+    </div>
+
+    <div class="dash-grid">
+      <div class="flow-card rise rise-2">
+        <div class="flow-head">
+          <div>
+            <h3>Flujo de efectivo</h3>
+            <div class="sub">Ingresos vs. Egresos (últimos 6 meses + 6 meses proyectados)</div>
+          </div>
+        </div>
+        <div id="flowChart"></div>
+        <div class="chart-legend">
+          <div class="legend-item"><span class="legend-dot" style="background: #0F5132;"></span>Ingresos</div>
+          <div class="legend-item"><span class="legend-dot" style="background: #B8622E;"></span>Egresos</div>
+          <div class="legend-item" style="margin-left: auto; color: var(--stone);">Fuente: SAT + bancos</div>
+        </div>
+      </div>
+
+      <div class="aging-card rise rise-3">
+        <div class="label">Cartera por antigüedad</div>
+        <div class="big" id="agingTotal">—</div>
+        <div class="sub">Total por cobrar</div>
+        <div class="aging-bar" id="agingBar"></div>
+        <ul class="aging-rows" id="agingRows"></ul>
+      </div>
+    </div>
+
+    <div class="quick-actions">
+      <a href="onboarding.html" class="qa">
+        <div class="qa-ic"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6v6H9z"/></svg></div>
+        <div><div class="qa-title">SAT</div><div class="qa-sub"><span class="sync-dot"></span> conectado</div></div>
+      </a>
+      <a href="pagos.html" class="qa">
+        <div class="qa-ic"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></div>
+        <div><div class="qa-title">Bancos</div><div class="qa-sub" id="qaBanks">3 conectados</div></div>
+      </a>
+      <a href="#" class="qa" onclick="exportReport(event)">
+        <div class="qa-ic"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></div>
+        <div><div class="qa-title">Exportar reporte</div><div class="qa-sub">CSV de facturas</div></div>
+      </a>
+      <a href="pagos.html" class="qa">
+        <div class="qa-ic"><svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
+        <div><div class="qa-title">Recordatorios</div><div class="qa-sub" id="qaMorosos">—</div></div>
+      </a>
+    </div>
+
+    <div class="events-row">
+      <div class="table-wrap rise rise-4">
+        <div class="table-head">
+          <div>
+            <h3>Facturas recientes</h3>
+            <div style="font-family: var(--mono); font-size: 0.78rem; color: var(--stone); margin-top: 2px;">Últimos movimientos</div>
+          </div>
+          <a href="facturas.html" class="btn btn-ghost btn-sm">Ver todas →</a>
+        </div>
+        <table>
+          <thead><tr><th>Folio</th><th>Cliente</th><th>Emisión</th><th>Status</th><th class="num">Total</th></tr></thead>
+          <tbody id="recentInvoices"></tbody>
+        </table>
+      </div>
+
+      <div class="events-card rise rise-5">
+        <h3>Próximos vencimientos</h3>
+        <div class="sub">Los siguientes 15 días</div>
+        <div id="upcomingList"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="app.js"></script>
+<script>
+(function () {
+  const { Store, Calc, fmt, mountSidebar } = Jobby;
+  mountSidebar('dashboard');
+
+  const u = Store.currentUser();
+  const hour = new Date().getHours();
+  const g = hour < 12 ? 'Buenos días' : hour < 19 ? 'Buenas tardes' : 'Buenas noches';
+  document.getElementById('greet').textContent = `${g}, ${u.name.split(' ')[0]}.`;
+  document.getElementById('today').textContent = 'Esto es lo que pasó con tus finanzas ' + new Date().toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' }) + '.';
+
+  // KPIs
+  const invoiced = Calc.invoicedThisMonth();
+  const invoicedLast = Calc.invoicedLastMonth();
+  const receivable = Calc.receivable();
+  const paid = Calc.paidThisMonth();
+  const overdue = Calc.overdueAmount();
+
+  document.getElementById('kpiInvoiced').textContent = fmt.mxn(invoiced);
+  document.getElementById('kpiReceivable').textContent = fmt.mxn(receivable);
+  document.getElementById('kpiPaid').textContent = fmt.mxn(paid);
+  document.getElementById('kpiOverdue').textContent = fmt.mxn(overdue);
+
+  if (invoicedLast > 0) {
+    const delta = ((invoiced - invoicedLast) / invoicedLast) * 100;
+    const el = document.getElementById('kpiInvoicedDelta');
+    el.textContent = (delta >= 0 ? '▲ ' : '▼ ') + Math.abs(delta).toFixed(1) + '% vs mes anterior';
+    el.className = 'kpi-delta ' + (delta >= 0 ? 'up' : 'down');
+  }
+  const pendingCount = Store.all('invoices').filter(i => i.type === 'emitted' && (i.status === 'pending' || i.status === 'sent')).length;
+  document.getElementById('kpiReceivableDelta').textContent = pendingCount + ' facturas pendientes';
+
+  const overdueCount = Store.all('invoices').filter(i => i.status === 'overdue').length;
+  document.getElementById('kpiOverdueDelta').textContent = overdueCount + ' facturas';
+
+  // Alert strip
+  const upcoming = Store.all('invoices')
+    .filter(i => i.type === 'emitted' && (i.status === 'pending' || i.status === 'sent'))
+    .map(i => ({ ...i, days: fmt.daysUntil(i.dueDate) }))
+    .filter(i => i.days >= 0 && i.days <= 5)
+    .sort((a, b) => a.days - b.days);
+
+  if (upcoming.length > 0) {
+    const total = upcoming.reduce((s, i) => s + i.total, 0);
+    document.getElementById('alertStrip').innerHTML = `
+      <div class="alert-strip rise">
+        <div class="msg">
+          <span class="icon-warn">!</span>
+          <div><strong>${upcoming.length} factura${upcoming.length === 1 ? '' : 's'} está${upcoming.length === 1 ? '' : 'n'} por vencer en los próximos 5 días.</strong>
+          <span style="color: var(--stone);"> Total: ${fmt.mxn(total)}</span></div>
+        </div>
+        <a href="facturas.html" class="btn btn-ghost btn-sm">Revisar →</a>
+      </div>`;
+  }
+
+  // Aging
+  const aging = Calc.aging();
+  const agingTotal = aging.current + aging.d30 + aging.d60 + aging.d90 + aging.over90;
+  document.getElementById('agingTotal').textContent = fmt.mxn(agingTotal);
+
+  const pct = v => agingTotal > 0 ? (v / agingTotal * 100) : 0;
+  document.getElementById('agingBar').innerHTML = `
+    <div class="aging-seg" style="width: ${pct(aging.current)}%; background: #2F7D4F;"></div>
+    <div class="aging-seg" style="width: ${pct(aging.d30)}%; background: #8FAE8B;"></div>
+    <div class="aging-seg" style="width: ${pct(aging.d60)}%; background: #D99050;"></div>
+    <div class="aging-seg" style="width: ${pct(aging.d90)}%; background: #B8622E;"></div>
+    <div class="aging-seg" style="width: ${pct(aging.over90)}%; background: #A93A2B;"></div>`;
+
+  document.getElementById('agingRows').innerHTML = `
+    <li><span class="who"><span class="dot" style="background: #2F7D4F;"></span>Al corriente</span><span class="val">${fmt.mxn(aging.current)}</span></li>
+    <li><span class="who"><span class="dot" style="background: #8FAE8B;"></span>1–30 días vencido</span><span class="val">${fmt.mxn(aging.d30)}</span></li>
+    <li><span class="who"><span class="dot" style="background: #D99050;"></span>31–60 días</span><span class="val">${fmt.mxn(aging.d60)}</span></li>
+    <li><span class="who"><span class="dot" style="background: #B8622E;"></span>61–90 días</span><span class="val">${fmt.mxn(aging.d90)}</span></li>
+    <li><span class="who"><span class="dot" style="background: #A93A2B;"></span>+90 días</span><span class="val">${fmt.mxn(aging.over90)}</span></li>`;
+
+  // Recent invoices
+  const recent = Store.all('invoices')
+    .filter(i => i.type === 'emitted')
+    .sort((a, b) => b.issueDate.localeCompare(a.issueDate))
+    .slice(0, 6);
+
+  document.getElementById('recentInvoices').innerHTML = recent.map(i => {
+    const client = Store.find('clients', i.clientId);
+    const initials = client.name.split(' ').filter(w => w.length > 2).map(w => w[0]).join('').slice(0, 2).toUpperCase();
+    return `<tr onclick="location.href='factura-detalle.html?id=${i.id}'" style="cursor:pointer;">
+      <td class="mono">${i.folio}</td>
+      <td><div class="client-cell"><span class="client-initials">${initials}</span>${client.name}</div></td>
+      <td class="mono">${fmt.date(i.issueDate)}</td>
+      <td>${fmt.statusBadge(i.status)}</td>
+      <td class="num">${fmt.mxn(i.total)}</td>
+    </tr>`;
+  }).join('');
+
+  // Upcoming
+  const next15 = Store.all('invoices')
+    .filter(i => i.type === 'emitted' && (i.status === 'pending' || i.status === 'sent' || i.status === 'overdue'))
+    .map(i => ({ ...i, days: fmt.daysUntil(i.dueDate) }))
+    .filter(i => i.days >= -15 && i.days <= 15)
+    .sort((a, b) => a.days - b.days)
+    .slice(0, 5);
+
+  document.getElementById('upcomingList').innerHTML = next15.length === 0
+    ? '<p style="color: var(--stone); font-size: 0.88rem;">No hay vencimientos próximos.</p>'
+    : next15.map(i => {
+        const client = Store.find('clients', i.clientId);
+        const due = new Date(i.dueDate + 'T12:00:00');
+        const isOverdue = i.days < 0;
+        return `<div class="event-item">
+          <div class="event-date" ${isOverdue ? 'style="border-color: var(--danger);"' : ''}>
+            <div class="d">${String(due.getDate()).padStart(2, '0')}</div>
+            <div class="m">${due.toLocaleDateString('es-MX', { month: 'short' }).replace('.', '')}</div>
+          </div>
+          <div class="event-info">
+            <div class="t">${client.name}</div>
+            <div class="d">${i.folio} · ${isOverdue ? `vencida hace ${Math.abs(i.days)}d` : i.days === 0 ? 'vence hoy' : `en ${i.days} días`}</div>
+          </div>
+          <div class="event-amt">${fmt.mxnCompact(i.total)}</div>
+        </div>`;
+      }).join('');
+
+  document.getElementById('qaMorosos').textContent = overdueCount === 0 ? 'sin morosos' : overdueCount + ' morosos';
+
+  renderFlowChart();
+
+  function renderFlowChart() {
+    const today = new Date();
+    const months = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      const ym = d.toISOString().slice(0, 7);
+      const income = Store.all('invoices').filter(inv => inv.type === 'emitted' && inv.issueDate.startsWith(ym) && inv.status !== 'draft' && inv.status !== 'cancelled').reduce((s, inv) => s + inv.total, 0);
+      const expense = Store.all('invoices').filter(inv => inv.type === 'received' && inv.issueDate.startsWith(ym)).reduce((s, inv) => s + inv.total, 0);
+      months.push({ label: d.toLocaleDateString('es-MX', { month: 'short' }).toUpperCase().replace('.', ''), income, expense });
+    }
+    const forecast = Calc.forecast(6).slice(1);
+    const lastExpense = months[5].expense || 280000;
+    forecast.forEach((f, idx) => {
+      const d = new Date(f.ym + '-01');
+      months.push({ label: d.toLocaleDateString('es-MX', { month: 'short' }).toUpperCase().replace('.', ''), income: f.committed + f.projected, expense: lastExpense * (1 + 0.02 * idx) });
+    });
+
+    const W = 800, H = 260;
+    const max = Math.max(...months.map(m => Math.max(m.income, m.expense))) * 1.15 || 1;
+    const stepX = (W - 80) / (months.length - 1);
+    const yFor = v => H - 40 - (v / max) * (H - 70);
+    const xFor = i => 50 + i * stepX;
+
+    const incomeLine = months.map((m, i) => `${i === 0 ? 'M' : 'L'} ${xFor(i)} ${yFor(m.income)}`).join(' ');
+    const expenseLine = months.map((m, i) => `${i === 0 ? 'M' : 'L'} ${xFor(i)} ${yFor(m.expense)}`).join(' ');
+    const incomeArea = incomeLine + ` L ${xFor(months.length - 1)} ${H - 40} L ${xFor(0)} ${H - 40} Z`;
+    const projectedStartX = xFor(5.5);
+
+    let svg = `<svg class="chart-svg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">`;
+    svg += `<g stroke="#D9D0B8" stroke-width="1" stroke-dasharray="2 4">`;
+    for (let i = 0; i <= 4; i++) { const y = 20 + i * (H - 60) / 4; svg += `<line x1="50" y1="${y}" x2="${W}" y2="${y}"/>`; }
+    svg += `</g><g font-family="Geist Mono" font-size="10" fill="#6B6B5E">`;
+    for (let i = 0; i <= 4; i++) { const v = max - (i * max / 4); svg += `<text x="10" y="${25 + i * (H - 60) / 4}">${'$' + (v / 1000).toFixed(0) + 'K'}</text>`; }
+    svg += `</g>`;
+    svg += `<rect x="${projectedStartX}" y="0" width="${W - projectedStartX}" height="${H - 30}" fill="#C9BE9F" fill-opacity="0.18"/>`;
+    svg += `<text x="${projectedStartX + 10}" y="18" font-family="Geist Mono" font-size="9" fill="#6B6B5E" letter-spacing="1">PROYECTADO →</text>`;
+    svg += `<defs><linearGradient id="gIn" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#0F5132" stop-opacity="0.28"/><stop offset="100%" stop-color="#0F5132" stop-opacity="0"/></linearGradient></defs>`;
+    svg += `<path d="${incomeArea}" fill="url(#gIn)"/>`;
+    svg += `<path d="${incomeLine}" fill="none" stroke="#0F5132" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`;
+    svg += `<path d="${expenseLine}" fill="none" stroke="#B8622E" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="5 3"/>`;
+    svg += `<circle cx="${xFor(5)}" cy="${yFor(months[5].income)}" r="5" fill="#0F5132"/>`;
+    svg += `<circle cx="${xFor(5)}" cy="${yFor(months[5].income)}" r="10" fill="#0F5132" fill-opacity="0.2"/>`;
+    svg += `<g font-family="Geist Mono" font-size="10" fill="#6B6B5E" text-anchor="middle">`;
+    months.forEach((m, i) => { svg += `<text x="${xFor(i)}" y="${H - 10}" ${i === 5 ? 'font-weight="600" fill="#0E1F1A"' : ''}>${m.label}</text>`; });
+    svg += `</g></svg>`;
+    document.getElementById('flowChart').innerHTML = svg;
+  }
+
+  document.getElementById('searchInput').addEventListener('keypress', e => {
+    if (e.key === 'Enter' && e.target.value.trim()) location.href = 'facturas.html?q=' + encodeURIComponent(e.target.value.trim());
+  });
+})();
+
+// ── Cierre global de dropdowns ───────────────────────────────
+window._closeAllDropdowns = function () {
+  document.getElementById('searchResults')?.classList.remove('open');
+  document.getElementById('notifPanel')?.classList.remove('open');
+};
+
+// ── Alertas de vencimiento ───────────────────────────────────
+(function () {
+  const { Store, fmt } = Jobby;
+  const btn = document.getElementById('notifBtn');
+  const panel = document.getElementById('notifPanel');
+  const badge = document.getElementById('notifBadge');
+
+  const invoices = Store.all('invoices').filter(i => i.type === 'emitted' && i.status !== 'paid' && i.status !== 'cancelled' && i.status !== 'draft');
+  const alerts = { overdue: [], today: [], soon3: [], soon7: [] };
+
+  invoices.forEach(inv => {
+    const days = fmt.daysUntil(inv.dueDate);
+    const client = inv.clientId ? Store.find('clients', inv.clientId) : null;
+    const entry = { inv, client, days };
+    if (days < 0) alerts.overdue.push(entry);
+    else if (days === 0) alerts.today.push(entry);
+    else if (days <= 3) alerts.soon3.push(entry);
+    else if (days <= 7) alerts.soon7.push(entry);
+  });
+
+  const total = alerts.overdue.length + alerts.today.length + alerts.soon3.length + alerts.soon7.length;
+
+  if (total > 0) {
+    badge.textContent = total > 9 ? '9+' : total;
+    badge.style.display = 'flex';
+  }
+
+  function buildPanel() {
+    if (total === 0) {
+      return `<div class="notif-empty">Sin alertas pendientes.<br>Todo al corriente.</div>`;
+    }
+    let html = `<div class="notif-header"><h4>Alertas</h4><span>${total} pendiente${total !== 1 ? 's' : ''}</span></div>`;
+
+    function rows(list, dotColor) {
+      return list.map(({ inv, client, days }) => {
+        const label = days < 0 ? `Vencida hace ${Math.abs(days)} día${Math.abs(days) !== 1 ? 's' : ''}` : days === 0 ? 'Vence hoy' : `Vence en ${days} día${days !== 1 ? 's' : ''}`;
+        return `<a class="notif-item" href="factura-detalle.html?id=${inv.id}">
+          <div class="notif-dot" style="background:${dotColor}"></div>
+          <div>
+            <div class="notif-item-main">${client?.name || '—'} · ${fmt.mxn(inv.total)}</div>
+            <div class="notif-item-sub">${inv.folio} · ${label}</div>
+          </div>
+        </a>`;
+      }).join('');
+    }
+
+    if (alerts.overdue.length) html += `<div class="notif-group-label">Vencidas</div>` + rows(alerts.overdue.sort((a,b) => a.days - b.days), '#A93A2B');
+    if (alerts.today.length)   html += `<div class="notif-group-label">Vence hoy</div>`   + rows(alerts.today, '#B8622E');
+    if (alerts.soon3.length)   html += `<div class="notif-group-label">Próximos 3 días</div>` + rows(alerts.soon3, '#D99050');
+    if (alerts.soon7.length)   html += `<div class="notif-group-label">Próximos 7 días</div>` + rows(alerts.soon7, '#C9A227');
+    return html;
+  }
+
+  function positionPanel() {
+    const rect = btn.getBoundingClientRect();
+    panel.style.top = (rect.bottom + 8) + 'px';
+    panel.style.right = (window.innerWidth - rect.right) + 'px';
+  }
+
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isOpen = panel.classList.contains('open');
+    window._closeAllDropdowns();
+    if (!isOpen) {
+      panel.innerHTML = buildPanel();
+      positionPanel();
+      panel.classList.add('open');
+    }
+  });
+
+  document.addEventListener('click', () => panel.classList.remove('open'));
+  panel.addEventListener('click', e => e.stopPropagation());
+})();
+
+// ── Búsqueda global ──────────────────────────────────────────
+(function () {
+  const input = document.getElementById('searchInput');
+  const panel = document.getElementById('searchResults');
+  const svgAttr = `width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"`;
+  const icInvoice = `<svg ${svgAttr}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`;
+  const icClient  = `<svg ${svgAttr}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
+  const icPayment = `<svg ${svgAttr}><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>`;
+
+  let timer;
+  function positionPanel() {
+    const rect = input.getBoundingClientRect();
+    panel.style.top = (rect.bottom + 8) + 'px';
+    panel.style.right = (window.innerWidth - rect.right) + 'px';
+  }
+
+  input.addEventListener('input', () => {
+    clearTimeout(timer);
+    timer = setTimeout(() => runSearch(input.value.trim()), 160);
+  });
+
+  input.addEventListener('focus', () => {
+    window._closeAllDropdowns();
+    positionPanel();
+    if (input.value.trim().length >= 2) panel.classList.add('open');
+  });
+
+  document.addEventListener('click', e => {
+    if (!input.closest('.search').contains(e.target)) panel.classList.remove('open');
+  });
+
+  input.addEventListener('keydown', e => { if (e.key === 'Escape') { panel.classList.remove('open'); input.blur(); } });
+
+  function runSearch(q) {
+    if (q.length < 2) { panel.classList.remove('open'); return; }
+    const lq = q.toLowerCase();
+    const { Store, fmt } = Jobby;
+
+    const invoices = Store.all('invoices').filter(i => {
+      const client = i.clientId ? Store.find('clients', i.clientId) : null;
+      return i.folio.toLowerCase().includes(lq)
+        || (client?.name || '').toLowerCase().includes(lq)
+        || (i.supplierName || '').toLowerCase().includes(lq);
+    }).slice(0, 4);
+
+    const clients = Store.all('clients').filter(c =>
+      c.name.toLowerCase().includes(lq) || (c.rfc || '').toLowerCase().includes(lq)
+    ).slice(0, 3);
+
+    const payments = Store.all('payments').filter(p =>
+      (p.reference || '').toLowerCase().includes(lq) || (p.bank || '').toLowerCase().includes(lq)
+    ).slice(0, 3);
+
+    if (!invoices.length && !clients.length && !payments.length) {
+      panel.innerHTML = `<div class="search-empty">Sin resultados para "<strong>${q}</strong>"</div>`;
+      positionPanel();
+      panel.classList.add('open');
+      return;
+    }
+
+    let html = '';
+    if (invoices.length) {
+      html += `<div class="search-group-label">Facturas</div>`;
+      html += invoices.map(i => {
+        const client = i.clientId ? Store.find('clients', i.clientId) : null;
+        const name = client?.name || i.supplierName || '—';
+        return `<a class="search-item" href="factura-detalle.html?id=${i.id}">
+          <div class="search-item-ic">${icInvoice}</div>
+          <div class="search-item-body"><div class="search-item-main">${i.folio} · ${fmt.mxn(i.total)}</div>
+          <div class="search-item-sub">${name} · ${fmt.statusLabel(i.status)}</div></div>
+        </a>`;
+      }).join('');
+    }
+    if (clients.length) {
+      html += `<div class="search-group-label">Clientes</div>`;
+      html += clients.map(c => `<a class="search-item" href="clientes.html">
+        <div class="search-item-ic">${icClient}</div>
+        <div class="search-item-body"><div class="search-item-main">${c.name}</div>
+        <div class="search-item-sub">RFC: ${c.rfc || '—'}</div></div>
+      </a>`).join('');
+    }
+    if (payments.length) {
+      html += `<div class="search-group-label">Pagos</div>`;
+      html += payments.map(p => `<a class="search-item" href="pagos.html">
+        <div class="search-item-ic">${icPayment}</div>
+        <div class="search-item-body"><div class="search-item-main">${fmt.mxn(p.amount)} · ${p.bank}</div>
+        <div class="search-item-sub">Ref: ${p.reference} · ${fmt.date(p.date)}</div></div>
+      </a>`).join('');
+    }
+
+    panel.innerHTML = html;
+    positionPanel();
+    panel.classList.add('open');
+  }
+})();
+
+function exportReport(e) {
+  e.preventDefault();
+  const { Store, toast } = Jobby;
+  const rows = Store.all('invoices').map(i => {
+    const client = i.clientId ? Store.find('clients', i.clientId)?.name : i.supplierName;
+    return [i.folio, i.type, client, i.issueDate, i.dueDate, i.subtotal, i.iva, i.total, i.status];
+  });
+  const csv = [['Folio', 'Tipo', 'Cliente/Proveedor', 'Emisión', 'Vencimiento', 'Subtotal', 'IVA', 'Total', 'Status'], ...rows].map(r => r.join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'jobby-facturas-' + new Date().toISOString().slice(0, 10) + '.csv'; a.click();
+  URL.revokeObjectURL(url);
+  toast('Reporte exportado como CSV');
+}
+</script>
+<script src="demo-aviso.js"></script>
+</body>
+</html>

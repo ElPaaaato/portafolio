@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clientes · Jobby</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  .cli-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+  .cli-card { background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 22px; transition: all 150ms; cursor: pointer; }
+  .cli-card:hover { border-color: var(--ink); transform: translateY(-2px); box-shadow: var(--shadow-sm); }
+  .cli-head { display: flex; gap: 14px; margin-bottom: 18px; }
+  .cli-avatar { width: 44px; height: 44px; border-radius: 10px; background: linear-gradient(135deg, #0F5132, #C9A227); color: var(--cream); display: grid; place-items: center; font-family: var(--serif); font-size: 1.1rem; font-weight: 500; flex-shrink: 0; }
+  .cli-info .name { font-size: 1rem; color: var(--ink); margin-bottom: 4px; line-height: 1.3; }
+  .cli-info .rfc { font-family: var(--mono); font-size: 0.78rem; color: var(--stone); }
+  .cli-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; padding-top: 14px; border-top: 1px solid var(--line); }
+  .cli-stat { font-size: 0.8rem; }
+  .cli-stat .l { font-family: var(--mono); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--stone); margin-bottom: 2px; }
+  .cli-stat .v { font-family: var(--serif); font-size: 1.05rem; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .cli-stat .v.warn { color: var(--danger); }
+  .cli-credit { font-size: 0.76rem; font-family: var(--mono); color: var(--stone); margin-bottom: 6px; display: flex; justify-content: space-between; }
+  .entity-tabs { display: flex; gap: 6px; margin-bottom: 20px; }
+  .etab { display: flex; align-items: center; gap: 8px; padding: 10px 18px; background: var(--paper); border: 1.5px solid var(--line); border-radius: var(--r-md); font-family: var(--sans); font-size: 0.88rem; color: var(--stone); cursor: pointer; transition: all 140ms; }
+  .etab:hover { border-color: var(--ink); color: var(--ink); }
+  .etab.active { background: var(--ink); color: var(--cream); border-color: var(--ink); }
+  .etab-count { font-family: var(--mono); font-size: 0.72rem; background: rgba(255,255,255,0.15); padding: 2px 8px; border-radius: 999px; }
+  .etab:not(.active) .etab-count { background: var(--bone); color: var(--slate); }
+  .filter-bar { display: flex; gap: 10px; margin-bottom: 20px; align-items: center; }
+  .sort-pills { display: flex; gap: 4px; }
+  .sort-pill { background: transparent; border: 1px solid var(--line); border-radius: 999px; padding: 7px 14px; font-family: var(--sans); font-size: 0.82rem; color: var(--stone); cursor: pointer; transition: all 120ms; white-space: nowrap; }
+  .sort-pill:hover { border-color: var(--ink); color: var(--ink); }
+  .sort-pill.active { background: var(--ink); color: var(--cream); border-color: var(--ink); }
+  .cli-detail-side { background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 28px; margin-top: 20px; }
+  .cli-detail-side h4 { font-size: 1rem; font-family: var(--serif); margin-bottom: 14px; }
+  .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+  .mini-kpi { background: var(--bone); padding: 14px; border-radius: var(--r-md); }
+  .mini-kpi .l { font-family: var(--mono); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--stone); margin-bottom: 4px; }
+  .mini-kpi .v { font-family: var(--serif); font-size: 1.1rem; color: var(--ink); font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <aside class="sidebar"></aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="title">
+        <div class="eyebrow">Cartera</div>
+        <h1 style="margin-top: 8px;" id="pageTitle">Clientes</h1>
+        <p id="pageDesc">Directorio de clientes con saldos, términos de pago y uso de crédito.</p>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn btn-secondary btn-sm" onclick="exportData()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Exportar
+        </button>
+        <button class="btn btn-primary btn-sm" onclick="openEntityModal()" id="newBtn">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <span id="newBtnLabel">Nuevo cliente</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Tabs: Clientes / Proveedores -->
+    <div class="entity-tabs">
+      <button class="etab active" data-tab="clients">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        Clientes
+        <span class="etab-count" id="clientCount">0</span>
+      </button>
+      <button class="etab" data-tab="suppliers">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+        Proveedores
+        <span class="etab-count" id="supplierCount">0</span>
+      </button>
+    </div>
+
+    <div class="kpi-row" id="kpiRow">
+      <div class="mini-kpi"><div class="l" id="mkActiveL">Clientes activos</div><div class="v" id="mkActive">—</div></div>
+      <div class="mini-kpi"><div class="l" id="mkBalanceL">Saldo por cobrar</div><div class="v" id="mkBalance">—</div></div>
+      <div class="mini-kpi"><div class="l" id="mkCreditL">Crédito total otorgado</div><div class="v" id="mkCredit">—</div></div>
+      <div class="mini-kpi"><div class="l" id="mkMoraL">Con mora</div><div class="v" id="mkMora" style="color: var(--danger);">—</div></div>
+    </div>
+
+    <div class="filter-bar">
+      <div class="search" style="width: 320px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input type="text" placeholder="Buscar por nombre o RFC…" id="searchInput">
+      </div>
+      <div class="sort-pills" id="sortPills">
+        <button class="sort-pill active" data-sort="name">Alfabético</button>
+        <button class="sort-pill" data-sort="balance">Mayor saldo</button>
+        <button class="sort-pill" data-sort="credit">Mayor crédito</button>
+        <button class="sort-pill" data-sort="recent">Más reciente</button>
+      </div>
+    </div>
+
+    <div class="cli-grid" id="cliGrid"></div>
+  </main>
+</div>
+
+<script src="app.js"></script>
+<script>
+(function () {
+  const { Store, Calc, fmt, mountSidebar, toast, Modal, can, clientInitials } = Jobby;
+  mountSidebar('clientes');
+
+  let search = '', sort = 'name', activeTab = 'clients';
+
+  function getInitials(name) {
+    return clientInitials(name).slice(0, 2);
+  }
+
+  function switchTab(tab) {
+    activeTab = tab;
+    document.querySelectorAll('.etab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+    search = '';
+    document.getElementById('searchInput').value = '';
+    document.querySelectorAll('.sort-pill').forEach(p => p.classList.toggle('active', p.dataset.sort === 'name'));
+    sort = 'name';
+
+    if (tab === 'clients') {
+      document.getElementById('pageTitle').textContent = 'Clientes';
+      document.getElementById('pageDesc').textContent = 'Directorio de clientes con saldos, términos de pago y uso de crédito.';
+      document.getElementById('newBtnLabel').textContent = 'Nuevo cliente';
+      document.getElementById('searchInput').placeholder = 'Buscar cliente o RFC…';
+      document.getElementById('mkActiveL').textContent = 'Clientes activos';
+      document.getElementById('mkBalanceL').textContent = 'Saldo por cobrar';
+      document.getElementById('mkCreditL').textContent = 'Crédito total otorgado';
+      document.getElementById('mkMoraL').textContent = 'Clientes con mora';
+    } else {
+      document.getElementById('pageTitle').textContent = 'Proveedores';
+      document.getElementById('pageDesc').textContent = 'Directorio de proveedores y empresas a las que pagas facturas.';
+      document.getElementById('newBtnLabel').textContent = 'Nuevo proveedor';
+      document.getElementById('searchInput').placeholder = 'Buscar proveedor o RFC…';
+      document.getElementById('mkActiveL').textContent = 'Proveedores activos';
+      document.getElementById('mkBalanceL').textContent = 'Cuentas por pagar';
+      document.getElementById('mkCreditL').textContent = 'Facturas recibidas';
+      document.getElementById('mkMoraL').textContent = 'Con facturas vencidas';
+    }
+    render();
+  }
+
+  function render() {
+    if (activeTab === 'clients') renderClients();
+    else renderSuppliers();
+  }
+
+  function renderClients() {
+    const clients = Store.all('clients');
+    document.getElementById('clientCount').textContent = clients.length;
+    document.getElementById('supplierCount').textContent = Store.all('suppliers').length;
+
+    const totalBalance = clients.reduce((s, c) => s + Calc.clientBalance(c.id), 0);
+    const totalCredit = clients.reduce((s, c) => s + (c.creditLimit || 0), 0);
+    const clientsWithOverdue = clients.filter(c =>
+      Store.all('invoices').some(i => i.clientId === c.id && i.status === 'overdue')
+    ).length;
+
+    document.getElementById('mkActive').textContent = clients.length;
+    document.getElementById('mkBalance').textContent = fmt.mxnCompact(totalBalance);
+    document.getElementById('mkCredit').textContent = fmt.mxnCompact(totalCredit);
+    document.getElementById('mkMora').textContent = clientsWithOverdue || '—';
+
+    let list = clients.filter(c => {
+      if (!search) return true;
+      const q = search.toLowerCase();
+      return c.name.toLowerCase().includes(q) || (c.rfc || '').toLowerCase().includes(q);
+    }).map(c => ({ ...c, balance: Calc.clientBalance(c.id) }));
+
+    list.sort((a, b) => {
+      if (sort === 'balance') return b.balance - a.balance;
+      if (sort === 'credit') return b.creditLimit - a.creditLimit;
+      if (sort === 'recent') return b.id.localeCompare(a.id);
+      return a.name.localeCompare(b.name);
+    });
+
+    if (!list.length) {
+      document.getElementById('cliGrid').innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="ic">👥</div><h4>Sin clientes</h4><p>Crea tu primer cliente para comenzar a facturar.</p></div>`;
+      return;
+    }
+
+    document.getElementById('cliGrid').innerHTML = list.map(c => {
+      const inits = getInitials(c.name);
+      const pctUsed = c.creditLimit > 0 ? Math.min(100, (c.balance / c.creditLimit) * 100) : 0;
+      const overdueCount = Store.all('invoices').filter(i => i.clientId === c.id && i.status === 'overdue').length;
+      const invoicesCount = Store.all('invoices').filter(i => i.clientId === c.id).length;
+      const pbarClass = pctUsed > 80 ? 'over' : pctUsed > 60 ? 'warn' : '';
+      return `<div class="cli-card" onclick="location.href='cliente-detalle.html?id=${c.id}'">
+        <div class="cli-head">
+          <div class="cli-avatar">${inits}</div>
+          <div class="cli-info">
+            <div class="name">${c.name}</div>
+            <div class="rfc">${c.rfc}</div>
+          </div>
+        </div>
+        <div class="cli-stats">
+          <div class="cli-stat"><div class="l">Saldo actual</div><div class="v ${overdueCount > 0 ? 'warn' : ''}">${fmt.mxn(c.balance)}</div></div>
+          <div class="cli-stat"><div class="l">Facturas</div><div class="v">${invoicesCount}${overdueCount ? ` <span style="font-size:0.75rem;color:var(--danger);">(${overdueCount} vencidas)</span>` : ''}</div></div>
+        </div>
+        <div>
+          <div class="cli-credit"><span>Crédito usado</span><span>${pctUsed.toFixed(0)}% de ${fmt.mxnCompact(c.creditLimit)}</span></div>
+          <div class="pbar"><div class="pbar-fill ${pbarClass}" style="width:${pctUsed}%"></div></div>
+        </div>
+        <div style="margin-top:14px;display:flex;justify-content:space-between;align-items:center;font-size:0.78rem;color:var(--stone);font-family:var(--mono);">
+          <span>${c.paymentTerms} días</span>
+          <span>${(c.address || '').split(',')[0]}</span>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function renderSuppliers() {
+    const suppliers = Store.all('suppliers');
+    document.getElementById('clientCount').textContent = Store.all('clients').length;
+    document.getElementById('supplierCount').textContent = suppliers.length;
+
+    const invoices = Store.all('invoices');
+    const receivedInvs = invoices.filter(i => i.type === 'received');
+    const totalPayable = receivedInvs
+      .filter(i => i.status === 'pending' || i.status === 'sent' || i.status === 'overdue')
+      .reduce((s, i) => s + i.total, 0);
+    const withOverdue = suppliers.filter(s =>
+      receivedInvs.some(i => i.supplierId === s.id && i.status === 'overdue')
+    ).length;
+
+    document.getElementById('mkActive').textContent = suppliers.length;
+    document.getElementById('mkBalance').textContent = fmt.mxnCompact(totalPayable);
+    document.getElementById('mkCredit').textContent = receivedInvs.length;
+    document.getElementById('mkMora').textContent = withOverdue || '—';
+
+    let list = suppliers.filter(s => {
+      if (!search) return true;
+      const q = search.toLowerCase();
+      return s.name.toLowerCase().includes(q) || (s.rfc || '').toLowerCase().includes(q);
+    });
+
+    list.sort((a, b) => {
+      if (sort === 'recent') return b.id.localeCompare(a.id);
+      return a.name.localeCompare(b.name);
+    });
+
+    if (!list.length) {
+      document.getElementById('cliGrid').innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="ic">🏭</div><h4>Sin proveedores</h4><p>Registra tus proveedores para llevar el control de cuentas por pagar.</p></div>`;
+      return;
+    }
+
+    document.getElementById('cliGrid').innerHTML = list.map(s => {
+      const inits = getInitials(s.name);
+      const invCount = receivedInvs.filter(i => i.supplierId === s.id).length;
+      return `<div class="cli-card" onclick="openEntityModal('${s.id}')">
+        <div class="cli-head">
+          <div class="cli-avatar" style="background:linear-gradient(135deg,#7B3F00,#C9A227);">${inits}</div>
+          <div class="cli-info">
+            <div class="name">${s.name}</div>
+            <div class="rfc">${s.rfc || 'Sin RFC'}</div>
+          </div>
+        </div>
+        <div class="cli-stats">
+          <div class="cli-stat"><div class="l">Facturas recibidas</div><div class="v">${invCount}</div></div>
+          <div class="cli-stat"><div class="l">Días de pago</div><div class="v">${s.paymentTerms || 30} días</div></div>
+        </div>
+        <div style="margin-top:14px;font-size:0.78rem;color:var(--stone);font-family:var(--mono);">
+          ${s.email || s.phone || s.address || '—'}
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // ── Modales ──────────────────────────────────────────────
+
+  window.openEntityModal = (id) => {
+    if (activeTab === 'clients') openClientModal(id);
+    else openSupplierModal(id);
+  };
+
+  window.openClientModal = (id) => {
+    if (!can('client.*') && !can('client.edit')) { toast('Sin permisos para crear o editar clientes', 'error'); return; }
+    const c = id ? Store.find('clients', id) : { name: '', rfc: '', email: '', phone: '', address: '', paymentTerms: 30, creditLimit: 100000, notes: '' };
+    Modal.open(`
+      <div class="modal-head">
+        <div><h3>${id ? 'Editar cliente' : 'Nuevo cliente'}</h3><div class="sub">${id ? 'Modifica la información del cliente' : 'Agrega un cliente a tu cartera'}</div></div>
+        <button class="modal-close" onclick="Jobby.Modal.close()">✕</button>
+      </div>
+      <div class="form-row">
+        <div class="form-field"><label>Razón social</label><input type="text" id="eName" value="${c.name}" required></div>
+        <div class="form-field"><label>RFC</label><input type="text" id="eRfc" value="${c.rfc}" maxlength="13" style="text-transform:uppercase;"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-field"><label>Email</label><input type="email" id="eEmail" value="${c.email || ''}"></div>
+        <div class="form-field"><label>Teléfono</label><input type="tel" id="ePhone" value="${c.phone || ''}"></div>
+      </div>
+      <div class="form-row full">
+        <div class="form-field"><label>Dirección</label><input type="text" id="eAddress" value="${c.address || ''}"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-field"><label>Días de crédito</label><input type="number" id="eTerms" value="${c.paymentTerms}" min="0"></div>
+        <div class="form-field"><label>Límite de crédito MXN</label><input type="number" id="eCredit" value="${c.creditLimit}" min="0"></div>
+      </div>
+      <div class="form-row full">
+        <div class="form-field"><label>Notas internas</label><textarea id="eNotes">${c.notes || ''}</textarea></div>
+      </div>
+      <div class="modal-foot">
+        ${id ? `<button class="btn btn-ghost btn-sm" style="color:var(--danger);margin-right:auto;" onclick="deleteClient('${id}')">Eliminar</button>` : ''}
+        <button class="btn btn-ghost btn-sm" onclick="Jobby.Modal.close()">Cancelar</button>
+        <button class="btn btn-primary btn-sm" onclick="saveClient('${id || ''}')">Guardar</button>
+      </div>`, { width: '560px' });
+  };
+
+  window.saveClient = (id) => {
+    const data = {
+      name: document.getElementById('eName').value.trim(),
+      rfc: document.getElementById('eRfc').value.trim().toUpperCase(),
+      email: document.getElementById('eEmail').value.trim(),
+      phone: document.getElementById('ePhone').value.trim(),
+      address: document.getElementById('eAddress').value.trim(),
+      paymentTerms: +document.getElementById('eTerms').value,
+      creditLimit: +document.getElementById('eCredit').value,
+      notes: document.getElementById('eNotes').value.trim()
+    };
+    if (!data.name) { toast('La razón social es requerida', 'error'); return; }
+    if (data.rfc && (data.rfc.length < 12 || data.rfc.length > 13)) { toast('RFC debe tener 12 o 13 caracteres', 'error'); return; }
+    if (id) { Store.update('clients', id, data); toast('Cliente actualizado'); }
+    else { Store.add('clients', data); Store.logActivity('Creó cliente', data.name); toast('Cliente creado'); }
+    Modal.close(); render();
+  };
+
+  window.deleteClient = (id) => {
+    const c = Store.find('clients', id);
+    if (Store.all('invoices').some(i => i.clientId === id)) { toast('No se puede eliminar: tiene facturas asociadas', 'error'); return; }
+    if (confirm(`¿Eliminar a ${c.name}?`)) {
+      Store.remove('clients', id);
+      Modal.close(); toast(`${c.name} eliminado`, 'error'); render();
+    }
+  };
+
+  window.openSupplierModal = (id) => {
+    const s = id ? Store.find('suppliers', id) : { name: '', rfc: '', email: '', phone: '', address: '', paymentTerms: 30, notes: '' };
+    Modal.open(`
+      <div class="modal-head">
+        <div><h3>${id ? 'Editar proveedor' : 'Nuevo proveedor'}</h3><div class="sub">${id ? 'Modifica la información del proveedor' : 'Registra un proveedor o empresa a la que pagas'}</div></div>
+        <button class="modal-close" onclick="Jobby.Modal.close()">✕</button>
+      </div>
+      <div class="form-row">
+        <div class="form-field"><label>Razón social</label><input type="text" id="eName" value="${s.name}" required></div>
+        <div class="form-field"><label>RFC <span style="color:var(--stone);font-size:0.78rem;">(opcional)</span></label><input type="text" id="eRfc" value="${s.rfc || ''}" maxlength="13" style="text-transform:uppercase;"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-field"><label>Email</label><input type="email" id="eEmail" value="${s.email || ''}"></div>
+        <div class="form-field"><label>Teléfono</label><input type="tel" id="ePhone" value="${s.phone || ''}"></div>
+      </div>
+      <div class="form-row full">
+        <div class="form-field"><label>Dirección</label><input type="text" id="eAddress" value="${s.address || ''}"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-field"><label>Días de pago</label><input type="number" id="eTerms" value="${s.paymentTerms || 30}" min="0"></div>
+        <div class="form-field"><label>Categoría <span style="color:var(--stone);font-size:0.78rem;">(opcional)</span></label><input type="text" id="eCategory" value="${s.category || ''}" placeholder="Nomina, Servicios, Software…"></div>
+      </div>
+      <div class="form-row full">
+        <div class="form-field"><label>Notas internas</label><textarea id="eNotes">${s.notes || ''}</textarea></div>
+      </div>
+      <div class="modal-foot">
+        ${id ? `<button class="btn btn-ghost btn-sm" style="color:var(--danger);margin-right:auto;" onclick="deleteSupplier('${id}')">Eliminar</button>` : ''}
+        <button class="btn btn-ghost btn-sm" onclick="Jobby.Modal.close()">Cancelar</button>
+        <button class="btn btn-primary btn-sm" onclick="saveSupplier('${id || ''}')">Guardar</button>
+      </div>`, { width: '560px' });
+  };
+
+  window.saveSupplier = (id) => {
+    const data = {
+      name: document.getElementById('eName').value.trim(),
+      rfc: document.getElementById('eRfc').value.trim().toUpperCase(),
+      email: document.getElementById('eEmail').value.trim(),
+      phone: document.getElementById('ePhone').value.trim(),
+      address: document.getElementById('eAddress').value.trim(),
+      paymentTerms: +document.getElementById('eTerms').value,
+      category: document.getElementById('eCategory').value.trim(),
+      notes: document.getElementById('eNotes').value.trim()
+    };
+    if (!data.name) { toast('La razón social es requerida', 'error'); return; }
+    if (id) { Store.update('suppliers', id, data); toast('Proveedor actualizado'); }
+    else { Store.add('suppliers', data); toast('Proveedor creado'); }
+    Modal.close(); render();
+  };
+
+  window.deleteSupplier = (id) => {
+    const s = Store.find('suppliers', id);
+    if (confirm(`¿Eliminar a ${s.name}?`)) {
+      Store.remove('suppliers', id);
+      Modal.close(); toast(`${s.name} eliminado`, 'error'); render();
+    }
+  };
+
+  window.exportData = () => {
+    const list = activeTab === 'clients' ? Store.all('clients') : Store.all('suppliers');
+    const headers = activeTab === 'clients'
+      ? ['Nombre', 'RFC', 'Email', 'Teléfono', 'Dirección', 'Términos', 'Crédito', 'Saldo']
+      : ['Nombre', 'RFC', 'Email', 'Teléfono', 'Dirección', 'Términos', 'Categoría'];
+    const rows = activeTab === 'clients'
+      ? list.map(c => [c.name, c.rfc, c.email, c.phone, c.address, c.paymentTerms, c.creditLimit, Calc.clientBalance(c.id)])
+      : list.map(s => [s.name, s.rfc, s.email, s.phone, s.address, s.paymentTerms, s.category]);
+    const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+    a.download = `jobby-${activeTab}-${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    toast('Exportado como CSV');
+  };
+
+  // ── Eventos ───────────────────────────────────────────────
+
+  document.querySelectorAll('.etab').forEach(btn => {
+    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+  });
+
+  document.getElementById('searchInput').addEventListener('input', e => { search = e.target.value; render(); });
+
+  document.getElementById('sortPills').addEventListener('click', e => {
+    const pill = e.target.closest('.sort-pill');
+    if (!pill) return;
+    document.querySelectorAll('.sort-pill').forEach(p => p.classList.remove('active'));
+    pill.classList.add('active');
+    sort = pill.dataset.sort;
+    render();
+  });
+
+  if (!can('client.*') && !can('client.edit')) {
+    document.getElementById('newBtn').style.display = 'none';
+  }
+
+  render();
+})();
+</script>
+<script src="demo-aviso.js"></script>
+</body>
+</html>

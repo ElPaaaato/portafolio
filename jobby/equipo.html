@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Equipo · Jobby</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  .user-card { background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 20px; display: grid; grid-template-columns: auto 1fr auto auto; gap: 20px; align-items: center; margin-bottom: 12px; }
+  .user-card.invited { background: repeating-linear-gradient(135deg, var(--paper), var(--paper) 10px, var(--bone) 10px, var(--bone) 20px); }
+  .user-avatar { width: 44px; height: 44px; border-radius: 10px; background: linear-gradient(135deg, #0F5132, #C9A227); color: var(--cream); display: grid; place-items: center; font-family: var(--serif); font-weight: 500; font-size: 1.05rem; }
+  .user-info .name { font-size: 1rem; color: var(--ink); margin-bottom: 4px; }
+  .user-info .email { font-family: var(--mono); font-size: 0.82rem; color: var(--stone); }
+  .user-meta { text-align: right; font-family: var(--mono); font-size: 0.8rem; color: var(--stone); }
+  .user-meta .status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+  .user-card .row-actions { display: flex; gap: 6px; }
+  .user-card .row-actions button { padding: 6px 10px; font-size: 0.8rem; }
+  .viewer-banner { background: rgba(184, 98, 46, 0.08); border-left: 3px solid var(--ochre); padding: 14px 18px; border-radius: var(--r-md); margin-bottom: 20px; font-size: 0.9rem; display: flex; gap: 10px; align-items: center; }
+  .role-swatch { display: inline-flex; align-items: center; gap: 6px; padding: 3px 8px; border-radius: 4px; font-family: var(--mono); font-size: 0.72rem; cursor: pointer; text-transform: uppercase; letter-spacing: 0.04em; }
+  @media (max-width: 800px) { .user-card { grid-template-columns: 1fr; gap: 10px; text-align: left; } .user-meta { text-align: left; } }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <aside class="sidebar"></aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="title">
+        <div class="eyebrow">Colaboradores</div>
+        <h1 style="margin-top: 8px;">Equipo</h1>
+        <p>Invita colaboradores y gestiona quién puede ver, crear o editar información.</p>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn btn-primary btn-sm" onclick="inviteUser()" id="inviteBtn">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Invitar colaborador
+        </button>
+      </div>
+    </div>
+
+    <div id="viewerWarning"></div>
+
+    <h3 style="margin-bottom: 16px; font-size: 1.1rem;">Miembros (<span id="memberCount">0</span>)</h3>
+    <div id="userList"></div>
+
+    <h3 style="margin: 40px 0 16px; font-size: 1.1rem;">Matriz de permisos</h3>
+    <p style="color: var(--stone); font-size: 0.9rem; margin-bottom: 20px;">Cada rol tiene un conjunto de permisos. Aquí puedes ver exactamente qué puede hacer cada uno.</p>
+
+    <div class="perm-grid" id="permMatrix"></div>
+  </main>
+</div>
+
+<script src="app.js"></script>
+<script>
+(function () {
+  const { Store, fmt, mountSidebar, toast, Modal, can, ROLES } = Jobby;
+  mountSidebar('equipo');
+
+  const currentUser = Store.currentUser();
+  const isAdmin = can('team.*') || currentUser.role === 'admin';
+
+  if (!isAdmin) {
+    document.getElementById('inviteBtn').style.display = 'none';
+    document.getElementById('viewerWarning').innerHTML = `
+      <div class="viewer-banner">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#B8622E" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <div>Estás viendo el equipo como <strong>${ROLES[currentUser.role].label}</strong>. Solo los administradores pueden invitar o cambiar roles.</div>
+      </div>`;
+  }
+
+  renderUsers();
+  renderPermMatrix();
+
+  function renderUsers() {
+    const users = Store.all('users');
+    document.getElementById('memberCount').textContent = users.length;
+
+    document.getElementById('userList').innerHTML = users.map(u => {
+      const last = u.lastActive ? fmt.relative(u.lastActive) : 'sin acceso aún';
+      const dotColor = u.status === 'active' ? '#2F7D4F' : '#D99050';
+      const isMe = u.id === currentUser.id;
+
+      return `<div class="user-card ${u.status === 'invited' ? 'invited' : ''}">
+        <div class="user-avatar" style="background: linear-gradient(135deg, ${u.color}, #C9A227);">${u.initials}</div>
+        <div class="user-info">
+          <div class="name">${u.name} ${isMe ? '<span style="font-family: var(--mono); font-size: 0.72rem; color: var(--stone); margin-left: 6px;">(tú)</span>' : ''}</div>
+          <div class="email">${u.email}</div>
+        </div>
+        <div>
+          <span class="role-tag role-${u.role}" onclick="${isAdmin && !isMe ? `changeRole('${u.id}')` : ''}" style="${isAdmin && !isMe ? 'cursor: pointer;' : ''}">${ROLES[u.role].label}</span>
+        </div>
+        <div class="user-meta">
+          <div><span class="status-dot" style="background: ${dotColor};"></span>${u.status === 'active' ? 'Activo' : 'Invitado'}</div>
+          <div style="font-size: 0.72rem; margin-top: 2px;">${last}</div>
+          ${isAdmin && !isMe ? `<div class="row-actions" style="margin-top: 8px;">
+            ${u.status === 'invited' ? `<button class="btn btn-ghost" onclick="resendInvite('${u.id}')">Reenviar</button>` : ''}
+            <button class="btn btn-ghost" style="color: var(--danger);" onclick="removeUser('${u.id}')">Quitar</button>
+          </div>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function renderPermMatrix() {
+    const categories = [
+      ['Ver dashboard', 'view.dashboard'],
+      ['Ver facturas', 'invoice.view'],
+      ['Crear facturas', 'invoice.create'],
+      ['Editar facturas', 'invoice.edit'],
+      ['Eliminar facturas', 'invoice.delete'],
+      ['Ver pagos', 'payment.view'],
+      ['Registrar pagos', 'payment.create'],
+      ['Ver clientes', 'client.view'],
+      ['Crear/editar clientes', 'client.edit'],
+      ['Ver reportes', 'report.view'],
+      ['Exportar reportes', 'report.export'],
+      ['Gestionar equipo', 'team.*'],
+      ['Configurar integraciones', 'integration.*']
+    ];
+
+    const roles = ['admin', 'cfo', 'accountant', 'sales', 'viewer'];
+
+    let html = `<div class="perm-cell hd first">Acción</div>`;
+    roles.forEach(r => { html += `<div class="perm-cell hd">${ROLES[r].label}</div>`; });
+
+    categories.forEach(([label, action]) => {
+      html += `<div class="perm-cell">${label}</div>`;
+      roles.forEach(r => {
+        const allowed = can(action, { role: r });
+        html += `<div class="perm-cell center">${allowed ? '<span class="perm-check">✓</span>' : '<span class="perm-no">—</span>'}</div>`;
+      });
+    });
+
+    document.getElementById('permMatrix').innerHTML = html;
+  }
+
+  window.inviteUser = () => {
+    if (!isAdmin) { toast('Solo administradores pueden invitar', 'error'); return; }
+    Modal.open(`
+      <div class="modal-head">
+        <div><h3>Invitar colaborador</h3><div class="sub">Le enviaremos una invitación por correo electrónico</div></div>
+        <button class="modal-close" onclick="Jobby.Modal.close()">✕</button>
+      </div>
+      <div class="form-row">
+        <div class="form-field"><label>Nombre completo</label><input type="text" id="iName" placeholder="Ej. Juan Pérez"></div>
+        <div class="form-field"><label>Correo electrónico</label><input type="email" id="iEmail" placeholder="juan@empresa.mx"></div>
+      </div>
+      <div class="form-row full">
+        <div class="form-field">
+          <label>Rol</label>
+          <select id="iRole">
+            <option value="viewer">Solo lectura — Puede ver dashboard y consultas</option>
+            <option value="sales">Ventas — Puede crear facturas y gestionar clientes</option>
+            <option value="accountant" selected>Contador — Facturas, pagos y reportes</option>
+            <option value="cfo">CFO — Control total financiero, sin gestión de equipo</option>
+            <option value="admin">Administrador — Control total</option>
+          </select>
+          <div class="form-help" id="iRoleHelp">El contador puede crear facturas, registrar pagos y exportar reportes, pero no invitar colaboradores.</div>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-ghost btn-sm" onclick="Jobby.Modal.close()">Cancelar</button>
+        <button class="btn btn-primary btn-sm" onclick="confirmInvite()">Enviar invitación</button>
+      </div>`);
+
+    // Role help
+    const roleHelps = {
+      viewer: 'Puede ver dashboard y datos, pero no modificar nada. Ideal para asesores o inversionistas.',
+      sales: 'Puede crear facturas y gestionar clientes. No tiene acceso a reportes financieros ni pagos.',
+      accountant: 'Puede crear facturas, registrar pagos y exportar reportes, pero no invitar colaboradores.',
+      cfo: 'Control total financiero: facturas, pagos, reportes, presupuestos. Puede ver pero no gestionar el equipo.',
+      admin: 'Control total, incluyendo gestión de equipo, configuración y permisos.'
+    };
+    document.getElementById('iRole').addEventListener('change', e => {
+      document.getElementById('iRoleHelp').textContent = roleHelps[e.target.value];
+    });
+  };
+
+  window.confirmInvite = () => {
+    const name = document.getElementById('iName').value.trim();
+    const email = document.getElementById('iEmail').value.trim();
+    const role = document.getElementById('iRole').value;
+    if (!name || !email) { toast('Nombre y correo son requeridos', 'error'); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { toast('Correo inválido', 'error'); return; }
+    if (Store.all('users').some(u => u.email === email)) { toast('Este correo ya está en el equipo', 'error'); return; }
+
+    const initials = name.split(' ').filter(w => w.length > 0).map(w => w[0]).join('').slice(0, 2).toUpperCase();
+    const colors = ['#B8622E', '#0F5132', '#3A6B8C', '#C9A227', '#8FAE8B'];
+    const color = colors[Math.floor(Math.random() * colors.length)];
+
+    Store.add('users', { name, email, role, status: 'invited', lastActive: null, initials, color });
+    Store.logActivity('Invitó colaborador', name);
+    Modal.close();
+    toast(`Invitación enviada a ${email}`);
+    renderUsers();
+  };
+
+  window.changeRole = (userId) => {
+    if (!isAdmin) return;
+    const u = Store.find('users', userId);
+    Modal.open(`
+      <div class="modal-head">
+        <div><h3>Cambiar rol de ${u.name}</h3><div class="sub">Los cambios de rol son inmediatos</div></div>
+        <button class="modal-close" onclick="Jobby.Modal.close()">✕</button>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        ${Object.keys(ROLES).map(r => `
+          <label style="display:flex;gap:12px;padding:14px;border:1px solid var(--line);border-radius:var(--r-md);cursor:pointer;align-items:flex-start;${r === u.role ? 'border-color:var(--ink);background:var(--bone);' : ''}">
+            <input type="radio" name="newRole" value="${r}" ${r === u.role ? 'checked' : ''} style="margin-top:3px;">
+            <div><div style="font-weight:500;">${ROLES[r].label}</div>
+              <div style="font-size:0.82rem;color:var(--stone);margin-top:4px;">${roleDescription(r)}</div></div>
+          </label>`).join('')}
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-ghost btn-sm" onclick="Jobby.Modal.close()">Cancelar</button>
+        <button class="btn btn-primary btn-sm" onclick="confirmRoleChange('${userId}')">Guardar cambio</button>
+      </div>`);
+  };
+
+  function roleDescription(r) {
+    return {
+      admin: 'Control total de la cuenta, incluyendo equipo y configuración.',
+      cfo: 'Acceso completo a finanzas, reportes y presupuestos.',
+      accountant: 'Gestión de facturas, pagos y contabilidad.',
+      sales: 'Crear facturas y gestionar su cartera de clientes.',
+      viewer: 'Solo lectura — dashboard y consultas.'
+    }[r];
+  }
+
+  window.confirmRoleChange = (userId) => {
+    const newRole = document.querySelector('input[name="newRole"]:checked').value;
+    const u = Store.find('users', userId);
+    Store.update('users', userId, { role: newRole });
+    Store.logActivity(`Cambió rol a ${ROLES[newRole].label}`, u.name);
+    Modal.close();
+    toast(`${u.name} ahora es ${ROLES[newRole].label}`);
+    renderUsers();
+  };
+
+  window.resendInvite = (userId) => {
+    const u = Store.find('users', userId);
+    Store.logActivity('Reenvió invitación', u.name);
+    toast(`Invitación reenviada a ${u.email}`);
+  };
+
+  window.removeUser = (userId) => {
+    const u = Store.find('users', userId);
+    if (confirm(`¿Quitar a ${u.name} del equipo? Perderá acceso inmediatamente.`)) {
+      Store.remove('users', userId);
+      Store.logActivity('Quitó del equipo', u.name);
+      toast(`${u.name} removido del equipo`, 'error');
+      renderUsers();
+    }
+  };
+})();
+</script>
+<script src="demo-aviso.js"></script>
+</body>
+</html>

@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cliente · Jobby</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  .cli-hero { display: flex; gap: 20px; align-items: flex-start; }
+  .cli-avatar-lg { width: 56px; height: 56px; border-radius: 14px; background: linear-gradient(135deg, #0F5132, #C9A227); color: var(--cream); display: grid; place-items: center; font-family: var(--serif); font-size: 1.4rem; font-weight: 500; flex-shrink: 0; }
+  .cli-layout { display: grid; grid-template-columns: 1fr 300px; gap: 20px; align-items: start; }
+  @media (max-width: 1000px) { .cli-layout { grid-template-columns: 1fr; } }
+  .cli-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
+  @media (max-width: 900px) { .cli-kpis { grid-template-columns: repeat(2, 1fr); } }
+  .ck { background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-md); padding: 16px 18px; }
+  .ck .l { font-family: var(--mono); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--stone); margin-bottom: 4px; }
+  .ck .v { font-family: var(--serif); font-size: 1.25rem; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .side-panel { background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 20px; }
+  .side-panel + .side-panel { margin-top: 16px; }
+  .side-panel h4 { font-family: var(--mono); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--stone); margin-bottom: 14px; }
+  .info-row { display: flex; flex-direction: column; gap: 12px; font-size: 0.88rem; }
+  .info-row .item .lbl { font-family: var(--mono); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--stone); margin-bottom: 2px; }
+  .info-row .item .val { color: var(--ink); }
+  .pay-item { display: flex; justify-content: space-between; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 0.85rem; }
+  .pay-item:last-child { border: none; }
+  .pay-item .pay-left .ref { color: var(--stone); font-family: var(--mono); font-size: 0.75rem; margin-top: 2px; }
+  .pay-item .pay-amt { font-family: var(--mono); color: var(--success); font-weight: 500; font-variant-numeric: tabular-nums; }
+  .tab-bar { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 20px; }
+  .tab { background: transparent; border: 0; padding: 12px 16px; font-family: var(--sans); font-size: 0.9rem; color: var(--stone); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .tab.active { color: var(--ink); border-bottom-color: var(--ochre); font-weight: 500; }
+  .tab:hover { color: var(--ink); }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* Proyección tab */
+  .proj-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .proj-legend { display: flex; gap: 14px; font-family: var(--mono); font-size: 0.73rem; color: var(--stone); align-items: center; }
+  .proj-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 4px; }
+  .type-badge { display: inline-flex; align-items: center; gap: 5px; font-family: var(--mono); font-size: 0.72rem; padding: 3px 9px; border-radius: 999px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; }
+  .type-invoice { background: rgba(15,81,50,0.1); color: #0F5132; }
+  .type-forecast { background: rgba(201,162,39,0.12); color: #96720F; }
+  .type-paid { background: rgba(15,81,50,0.18); color: #0a3d22; }
+  .bank-tag { font-family: var(--mono); font-size: 0.73rem; color: var(--stone); background: var(--bone); padding: 2px 7px; border-radius: 4px; }
+  .proj-empty { text-align: center; padding: 48px 24px; color: var(--stone); }
+  .proj-empty .ic { font-size: 2.5rem; margin-bottom: 12px; }
+  .proj-empty h4 { font-family: var(--serif); font-size: 1.1rem; color: var(--ink); margin-bottom: 6px; }
+  .proj-row-forecast { background: rgba(201,162,39,0.04); }
+  .proj-row-forecast:hover { background: rgba(201,162,39,0.09) !important; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <aside class="sidebar"></aside>
+
+  <main class="main">
+    <a href="clientes.html" class="back-link">← Volver a clientes</a>
+
+    <div class="topbar">
+      <div class="cli-hero">
+        <div class="cli-avatar-lg" id="heroAvatar">—</div>
+        <div>
+          <div class="eyebrow">Cliente</div>
+          <h1 style="margin-top: 4px;" id="heroName">—</h1>
+          <p id="heroSub">—</p>
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn btn-secondary btn-sm" onclick="openEditModal()">Editar</button>
+        <button class="btn btn-primary btn-sm" onclick="goNewInv()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Nueva factura
+        </button>
+      </div>
+    </div>
+
+    <div class="cli-kpis">
+      <div class="ck"><div class="l">Saldo por cobrar</div><div class="v" id="kBalance">—</div></div>
+      <div class="ck"><div class="l">Facturado total</div><div class="v" id="kBilled">—</div></div>
+      <div class="ck"><div class="l">Cobrado total</div><div class="v" style="color:var(--success)" id="kPaid">—</div></div>
+      <div class="ck"><div class="l">Facturas vencidas</div><div class="v" id="kOverdue" style="color:var(--danger)">—</div></div>
+    </div>
+
+    <div class="cli-layout">
+      <div>
+        <div class="tab-bar">
+          <button class="tab active" data-tab="invoices">Facturas</button>
+          <button class="tab" data-tab="payments">Pagos</button>
+          <button class="tab" data-tab="forecast">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="margin-right:4px"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+            Proyección
+          </button>
+        </div>
+
+        <div class="tab-content active" id="tab-invoices">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Folio</th>
+                  <th>Emisión</th>
+                  <th>Vencimiento</th>
+                  <th>Status</th>
+                  <th class="num">Total</th>
+                  <th class="num">Por cobrar</th>
+                </tr>
+              </thead>
+              <tbody id="invTbody"></tbody>
+            </table>
+            <div class="pager">
+              <span id="invPagerInfo">—</span>
+              <div class="pager-btns" id="invPagerBtns"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-content" id="tab-payments">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Factura</th>
+                  <th>Método</th>
+                  <th>Banco</th>
+                  <th>Referencia</th>
+                  <th class="num">Monto</th>
+                </tr>
+              </thead>
+              <tbody id="payTbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="tab-content" id="tab-forecast">
+          <div class="proj-toolbar">
+            <div class="proj-legend">
+              <span><span class="proj-dot" style="background:#0F5132;"></span>Factura emitida</span>
+              <span><span class="proj-dot" style="background:#C9A227;"></span>Proyección</span>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="openForecastModal()">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Nueva proyección
+            </button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Concepto / Folio</th>
+                  <th>Tipo</th>
+                  <th class="num">Importe</th>
+                  <th>Estatus</th>
+                  <th>Banco</th>
+                  <th style="width:40px;"></th>
+                </tr>
+              </thead>
+              <tbody id="forecastTbody"></tbody>
+            </table>
+          </div>
+          <div id="projSummary" style="display:flex;gap:20px;padding:14px 20px;background:var(--bone);border-top:1px solid var(--line);font-family:var(--mono);font-size:0.8rem;color:var(--stone);"></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="side-panel">
+          <h4>Información de contacto</h4>
+          <div class="info-row" id="contactInfo"></div>
+        </div>
+        <div class="side-panel">
+          <h4>Crédito</h4>
+          <div id="creditInfo"></div>
+        </div>
+        <div class="side-panel" id="notesPanel" style="display:none">
+          <h4>Notas internas</h4>
+          <p style="font-size:0.88rem;color:var(--slate);" id="notesText"></p>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="app.js"></script>
+<script>
+(function () {
+  const { Store, Calc, fmt, mountSidebar, toast, Modal, can, clientInitials } = Jobby;
+  mountSidebar('clientes');
+
+  const id = new URLSearchParams(location.search).get('id');
+  const c = Store.find('clients', id);
+
+  if (!c) {
+    document.querySelector('.main').innerHTML = `
+      <div class="empty"><div class="ic">?</div><h4>Cliente no encontrado</h4>
+      <a href="clientes.html" class="btn btn-primary btn-sm">Volver a clientes</a></div>`;
+    return;
+  }
+
+  const PAGE = 10;
+  let invPage = 1;
+
+  window.goNewInv = () => location.href = 'facturas.html?new=1&client=' + id;
+
+  function render() {
+    const client = Store.find('clients', id);
+    const invoices = Store.all('invoices').filter(i => i.clientId === id).sort((a, b) => b.issueDate.localeCompare(a.issueDate));
+    const payments = Store.all('payments').filter(p => invoices.some(i => i.id === p.invoiceId)).sort((a, b) => b.date.localeCompare(a.date));
+    const balance = Calc.clientBalance(id);
+    const totalBilled = invoices.filter(i => i.status !== 'draft' && i.status !== 'cancelled').reduce((s, i) => s + i.total, 0);
+    const totalPaid = payments.reduce((s, p) => s + p.amount, 0);
+    const overdueCount = invoices.filter(i => i.status === 'overdue').length;
+    const inits = clientInitials(client.name).slice(0, 2);
+
+    document.getElementById('heroAvatar').textContent = inits;
+    document.getElementById('heroName').textContent = client.name;
+    document.getElementById('heroSub').textContent = `RFC: ${client.rfc} · ${client.address}`;
+    document.title = client.name + ' · Jobby';
+
+    document.getElementById('kBalance').textContent = fmt.mxn(balance);
+    document.getElementById('kBilled').textContent = fmt.mxnCompact(totalBilled);
+    document.getElementById('kPaid').textContent = fmt.mxnCompact(totalPaid);
+    document.getElementById('kOverdue').textContent = overdueCount || '—';
+
+    document.getElementById('contactInfo').innerHTML = `
+      <div class="item"><div class="lbl">Email</div><div class="val">${client.email || '—'}</div></div>
+      <div class="item"><div class="lbl">Teléfono</div><div class="val">${client.phone || '—'}</div></div>
+      <div class="item"><div class="lbl">Términos de pago</div><div class="val">${client.paymentTerms} días</div></div>
+      <div class="item"><div class="lbl">Dirección</div><div class="val" style="color:var(--stone);font-size:0.83rem;">${client.address}</div></div>`;
+
+    const pct = client.creditLimit > 0 ? Math.min(100, (balance / client.creditLimit) * 100) : 0;
+    const pbarClass = pct > 80 ? 'over' : pct > 60 ? 'warn' : '';
+    document.getElementById('creditInfo').innerHTML = `
+      <div style="display:flex;justify-content:space-between;font-size:0.8rem;margin-bottom:6px;">
+        <span style="color:var(--stone);font-family:var(--mono);">Usado</span>
+        <span style="font-family:var(--mono);color:var(--ink);">${fmt.mxn(balance)} / ${fmt.mxn(client.creditLimit)}</span>
+      </div>
+      <div class="pbar"><div class="pbar-fill ${pbarClass}" style="width:${pct}%"></div></div>
+      <div style="font-size:0.75rem;color:var(--stone);font-family:var(--mono);margin-top:6px;">${pct.toFixed(0)}% utilizado</div>`;
+
+    if (client.notes) {
+      document.getElementById('notesPanel').style.display = '';
+      document.getElementById('notesText').textContent = client.notes;
+    }
+
+    // Invoices tab
+    const total = invoices.length;
+    const pages = Math.max(1, Math.ceil(total / PAGE));
+    if (invPage > pages) invPage = pages;
+    const start = (invPage - 1) * PAGE;
+    const paidMap = {};
+    payments.forEach(p => { paidMap[p.invoiceId] = (paidMap[p.invoiceId] || 0) + p.amount; });
+
+    document.getElementById('invTbody').innerHTML = invoices.slice(start, start + PAGE).length === 0
+      ? `<tr><td colspan="6"><div class="empty"><h4>Sin facturas</h4></div></td></tr>`
+      : invoices.slice(start, start + PAGE).map(inv => {
+          const pending = Math.max(0, inv.total - (paidMap[inv.id] || 0));
+          const dueStyle = inv.status === 'overdue' ? 'style="color:var(--danger);"' : '';
+          return `<tr style="cursor:pointer;" onclick="location.href='factura-detalle.html?id=${inv.id}'">
+            <td class="mono">${inv.folio}</td>
+            <td class="mono">${fmt.date(inv.issueDate)}</td>
+            <td class="mono" ${dueStyle}>${fmt.date(inv.dueDate)}</td>
+            <td>${fmt.statusBadge(inv.status)}</td>
+            <td class="num">${fmt.mxn(inv.total)}</td>
+            <td class="num" style="color:${pending > 0 ? 'var(--ochre)' : 'var(--stone)'};">${pending > 0 ? fmt.mxn(pending) : '—'}</td>
+          </tr>`;
+        }).join('');
+
+    document.getElementById('invPagerInfo').textContent = total === 0 ? 'Sin facturas' :
+      `${start + 1}–${Math.min(start + PAGE, total)} de ${total} facturas`;
+
+    let ph = `<button ${invPage === 1 ? 'disabled' : ''} onclick="setInvPage(${invPage - 1})">‹</button>`;
+    for (let p = 1; p <= pages; p++) ph += `<button class="${p === invPage ? 'active' : ''}" onclick="setInvPage(${p})">${p}</button>`;
+    ph += `<button ${invPage === pages ? 'disabled' : ''} onclick="setInvPage(${invPage + 1})">›</button>`;
+    document.getElementById('invPagerBtns').innerHTML = ph;
+
+    // Payments tab
+    document.getElementById('payTbody').innerHTML = payments.length === 0
+      ? `<tr><td colspan="6"><p style="text-align:center;color:var(--stone);padding:24px;">Sin pagos registrados.</p></td></tr>`
+      : payments.map(p => {
+          const inv = Store.find('invoices', p.invoiceId);
+          return `<tr>
+            <td class="mono">${fmt.date(p.date)}</td>
+            <td class="mono">${inv?.folio || '—'}</td>
+            <td>${p.method}</td>
+            <td>${p.bank}</td>
+            <td class="mono" style="font-size:0.8rem;color:var(--stone);">${p.reference}</td>
+            <td class="num" style="color:var(--success);">${fmt.mxn(p.amount)}</td>
+          </tr>`;
+        }).join('');
+
+    // Proyección tab — merge invoices + forecasts in one timeline
+    renderForecast(invoices, payments);
+  }
+
+  function renderForecast(invoices, payments) {
+    const forecasts = Store.all('forecasts').filter(f => f.clientId === id);
+
+    // Build a bank lookup: invoiceId → bank name (from payments)
+    const bankMap = {};
+    payments.forEach(p => { if (p.bank && p.bank !== 'N/A') bankMap[p.invoiceId] = p.bank; });
+
+    // Merge rows: invoices + forecasts
+    const rows = [];
+
+    invoices.forEach(inv => {
+      if (inv.status === 'draft' || inv.status === 'cancelled') return;
+      rows.push({
+        date: inv.issueDate,
+        concept: inv.folio,
+        rowType: 'invoice',
+        amount: inv.total,
+        status: inv.status,
+        bank: bankMap[inv.id] || null,
+        id: inv.id,
+        linkTo: 'factura-detalle.html?id=' + inv.id
+      });
+    });
+
+    forecasts.forEach(f => {
+      rows.push({
+        date: f.date,
+        concept: f.concept,
+        rowType: 'forecast',
+        amount: f.amount,
+        status: f.status,
+        bank: f.bank || null,
+        id: f.id,
+        notes: f.notes
+      });
+    });
+
+    rows.sort((a, b) => b.date.localeCompare(a.date));
+
+    if (!rows.length) {
+      document.getElementById('forecastTbody').innerHTML =
+        `<tr><td colspan="7"><div class="proj-empty"><div class="ic">📈</div><h4>Sin datos de proyección</h4><p>Las facturas emitidas aparecen aquí automáticamente.<br>Agrega entradas de proyección para comparar con lo real.</p></div></td></tr>`;
+      document.getElementById('projSummary').innerHTML = '';
+      return;
+    }
+
+    document.getElementById('forecastTbody').innerHTML = rows.map(row => {
+      const isInvoice = row.rowType === 'invoice';
+      const badge = isInvoice
+        ? `<span class="type-badge type-invoice">Factura</span>`
+        : `<span class="type-badge type-forecast">Forecast</span>`;
+
+      const statusHtml = isInvoice
+        ? fmt.statusBadge(row.status)
+        : row.status === 'paid'
+          ? `<span class="badge badge-paid">Pagada</span>`
+          : `<span class="badge badge-pending">Pendiente</span>`;
+
+      const bankHtml = row.bank
+        ? `<span class="bank-tag">${row.bank}</span>`
+        : `<span style="color:var(--stone);font-family:var(--mono);font-size:0.75rem;">—</span>`;
+
+      const conceptHtml = isInvoice
+        ? `<a href="${row.linkTo}" style="color:var(--ink);text-decoration:none;font-family:var(--mono);">${row.concept}</a>`
+        : `<span style="font-size:0.9rem;">${row.concept}</span>`;
+
+      const editBtn = isInvoice ? '' :
+        `<button class="rm-btn" onclick="editForecastRow('${row.id}')" title="Editar">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </button>`;
+
+      return `<tr class="${isInvoice ? '' : 'proj-row-forecast'}">
+        <td class="mono" style="white-space:nowrap;">${fmt.date(row.date)}</td>
+        <td>${conceptHtml}</td>
+        <td>${badge}</td>
+        <td class="num" style="font-family:var(--mono);font-weight:500;">${fmt.mxn(row.amount)}</td>
+        <td>${statusHtml}</td>
+        <td>${bankHtml}</td>
+        <td>${editBtn}</td>
+      </tr>`;
+    }).join('');
+
+    // Summary footer
+    const totalInvoiced = rows.filter(r => r.rowType === 'invoice').reduce((s, r) => s + r.amount, 0);
+    const totalForecast = rows.filter(r => r.rowType === 'forecast').reduce((s, r) => s + r.amount, 0);
+    const totalPaidRows = rows.filter(r => r.status === 'paid').reduce((s, r) => s + r.amount, 0);
+    document.getElementById('projSummary').innerHTML = `
+      <span>Facturado: <strong style="color:var(--ink);">${fmt.mxnCompact(totalInvoiced)}</strong></span>
+      <span>Proyectado: <strong style="color:var(--ochre-dark, #96720F);">${fmt.mxnCompact(totalForecast)}</strong></span>
+      <span>Total cobrado: <strong style="color:var(--success);">${fmt.mxnCompact(totalPaidRows)}</strong></span>`;
+  }
+
+  window.setInvPage = (p) => { invPage = p; render(); };
+
+  // ── Forecast modal ─────────────────────────────────────────
+
+  const BANKS = ['Bank of America', 'Kapital', 'BBVA', 'Banamex', 'Banorte', 'Santander', 'HSBC', 'Afirme', 'Otro'];
+
+  window.openForecastModal = (fcId) => {
+    const fc = fcId ? Store.find('forecasts', fcId) : null;
+    const today = new Date().toISOString().slice(0, 10);
+    const bankOpts = ['', ...BANKS].map(b => `<option value="${b}" ${(fc?.bank || '') === b ? 'selected' : ''}>${b || '— Sin banco —'}</option>`).join('');
+    Modal.open(`
+      <div class="modal-head">
+        <div><h3>${fc ? 'Editar proyección' : 'Nueva proyección'}</h3>
+        <div class="sub">Entrada de forecast para ${Store.find('clients', id)?.name}</div></div>
+        <button class="modal-close" onclick="Jobby.Modal.close()">✕</button>
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label>Fecha estimada</label>
+          <input type="date" id="fcDate" value="${fc?.date || today}">
+        </div>
+        <div class="form-field">
+          <label>Importe MXN <span style="color:var(--stone);font-size:0.78rem;">(con IVA si aplica)</span></label>
+          <input type="number" id="fcAmount" value="${fc?.amount || ''}" placeholder="0.00" min="0" step="0.01">
+        </div>
+      </div>
+      <div class="form-row full">
+        <div class="form-field">
+          <label>Concepto</label>
+          <input type="text" id="fcConcept" value="${fc?.concept || ''}" placeholder="Servicio mensual, Proyecto X…">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label>Estatus</label>
+          <select id="fcStatus">
+            <option value="pending" ${(fc?.status || 'pending') === 'pending' ? 'selected' : ''}>Pendiente</option>
+            <option value="paid" ${fc?.status === 'paid' ? 'selected' : ''}>Pagada</option>
+            <option value="cancelled" ${fc?.status === 'cancelled' ? 'selected' : ''}>Cancelada</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label>Banco que recibe <span style="color:var(--stone);font-size:0.78rem;">(si ya cobrado)</span></label>
+          <select id="fcBank">${bankOpts}</select>
+        </div>
+      </div>
+      <div class="form-row full">
+        <div class="form-field">
+          <label>Notas <span style="color:var(--stone);font-size:0.78rem;">(opcional)</span></label>
+          <textarea id="fcNotes" style="min-height:56px;">${fc?.notes || ''}</textarea>
+        </div>
+      </div>
+      <div class="modal-foot">
+        ${fc ? `<button class="btn btn-ghost btn-sm" style="color:var(--danger);margin-right:auto;" onclick="deleteForecast('${fcId}')">Eliminar</button>` : ''}
+        <button class="btn btn-ghost btn-sm" onclick="Jobby.Modal.close()">Cancelar</button>
+        <button class="btn btn-primary btn-sm" onclick="saveForecast('${fcId || ''}')">Guardar</button>
+      </div>`, { width: '520px' });
+  };
+
+  window.editForecastRow = (fcId) => openForecastModal(fcId);
+
+  window.saveForecast = (fcId) => {
+    const concept = document.getElementById('fcConcept').value.trim();
+    const amount = +document.getElementById('fcAmount').value;
+    if (!concept) { toast('El concepto es requerido', 'error'); return; }
+    if (!amount || amount <= 0) { toast('El importe debe ser mayor a cero', 'error'); return; }
+
+    const data = {
+      clientId: id,
+      date: document.getElementById('fcDate').value,
+      concept,
+      amount,
+      status: document.getElementById('fcStatus').value,
+      bank: document.getElementById('fcBank').value || null,
+      notes: document.getElementById('fcNotes').value.trim()
+    };
+
+    if (fcId) { Store.update('forecasts', fcId, data); toast('Proyección actualizada'); }
+    else { Store.add('forecasts', data); toast('Proyección creada'); }
+    Modal.close();
+    render();
+  };
+
+  window.deleteForecast = (fcId) => {
+    if (confirm('¿Eliminar esta proyección?')) {
+      Store.remove('forecasts', fcId);
+      Modal.close();
+      toast('Proyección eliminada', 'error');
+      render();
+    }
+  };
+
+  // ── Tabs ──────────────────────────────────────────────────
+
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+    });
+  });
+
+  // ── Edit modal ────────────────────────────────────────────
+
+  window.openEditModal = () => {
+    if (!can('client.*') && !can('client.edit')) { toast('Sin permisos para editar clientes', 'error'); return; }
+    const client = Store.find('clients', id);
+    Modal.open(`
+      <div class="modal-head">
+        <div><h3>Editar cliente</h3><div class="sub">Modifica la información de ${client.name}</div></div>
+        <button class="modal-close" onclick="Jobby.Modal.close()">✕</button>
+      </div>
+      <div class="form-row">
+        <div class="form-field"><label>Razón social</label><input type="text" id="cName" value="${client.name}"></div>
+        <div class="form-field"><label>RFC</label><input type="text" id="cRfc" value="${client.rfc}" maxlength="13" style="text-transform:uppercase;"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-field"><label>Email</label><input type="email" id="cEmail" value="${client.email || ''}"></div>
+        <div class="form-field"><label>Teléfono</label><input type="tel" id="cPhone" value="${client.phone || ''}"></div>
+      </div>
+      <div class="form-row full">
+        <div class="form-field"><label>Dirección</label><input type="text" id="cAddress" value="${client.address || ''}"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-field"><label>Días de crédito</label><input type="number" id="cTerms" value="${client.paymentTerms}" min="0"></div>
+        <div class="form-field"><label>Límite de crédito MXN</label><input type="number" id="cCredit" value="${client.creditLimit}" min="0"></div>
+      </div>
+      <div class="form-row full">
+        <div class="form-field"><label>Notas internas</label><textarea id="cNotes">${client.notes || ''}</textarea></div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-ghost btn-sm" onclick="Jobby.Modal.close()">Cancelar</button>
+        <button class="btn btn-primary btn-sm" onclick="saveClient()">Guardar</button>
+      </div>`, { width: '560px' });
+  };
+
+  window.saveClient = () => {
+    const data = {
+      name: document.getElementById('cName').value.trim(),
+      rfc: document.getElementById('cRfc').value.trim().toUpperCase(),
+      email: document.getElementById('cEmail').value.trim(),
+      phone: document.getElementById('cPhone').value.trim(),
+      address: document.getElementById('cAddress').value.trim(),
+      paymentTerms: +document.getElementById('cTerms').value,
+      creditLimit: +document.getElementById('cCredit').value,
+      notes: document.getElementById('cNotes').value.trim()
+    };
+    if (!data.name) { toast('La razón social es requerida', 'error'); return; }
+    Store.update('clients', id, data);
+    Store.logActivity('Editó cliente', data.name);
+    Modal.close();
+    toast('Cliente actualizado');
+    render();
+  };
+
+  render();
+})();
+</script>
+<script src="demo-aviso.js"></script>
+</body>
+</html>

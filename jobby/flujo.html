@@ -1,0 +1,2142 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flujo · Jobby</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+
+  /* ── Panel toggles ───────────────────────────── */
+  .panel-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 16px;
+    background: var(--bone);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    cursor: pointer;
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    color: var(--stone);
+    text-align: left;
+    transition: all 120ms;
+    margin-bottom: 6px;
+    user-select: none;
+  }
+  .panel-toggle:hover { background: var(--paper); color: var(--ink); border-color: var(--stone); }
+  .panel-toggle .pt-label { flex: 1; font-weight: 500; letter-spacing: 0.01em; }
+  .panel-toggle .pt-meta { font-size: 0.7rem; color: var(--stone); }
+  .panel-toggle .pt-caret { transition: transform 220ms; flex-shrink: 0; width: 14px; height: 14px; }
+  .panel-toggle.open { color: var(--ink); background: var(--paper); border-color: var(--ink); }
+  .panel-toggle.open .pt-caret { transform: rotate(180deg); }
+  .panel-body { margin-bottom: 14px; }
+
+  /* ── Main filter bar ─────────────────────────── */
+  .f-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    flex-wrap: wrap;
+  }
+  .f-sep { flex: 1; }
+  .fpill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: var(--paper);
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    color: var(--stone);
+    cursor: pointer;
+    transition: all 120ms;
+    white-space: nowrap;
+  }
+  .fpill:hover { border-color: var(--ink); color: var(--ink); }
+  .fpill.active { background: var(--ink); color: var(--cream); border-color: var(--ink); }
+  .fpill select {
+    background: transparent; border: 0; outline: 0;
+    font-family: var(--mono); font-size: 0.78rem;
+    color: inherit; cursor: pointer; padding: 0;
+    appearance: none; -webkit-appearance: none;
+  }
+  .fpill.sel-active { background: var(--ink); color: var(--cream); border-color: var(--ink); }
+  .fpill.sel-active select { color: var(--cream); }
+
+  /* ── Charts area ─────────────────────────────── */
+  .charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 16px;
+    margin-bottom: 8px;
+  }
+  @media (max-width: 1100px) { .charts-grid { grid-template-columns: 1fr; } }
+
+  .chart-card {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    padding: 22px 24px;
+  }
+  .chart-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; }
+  .chart-head h3 { font-size: 1.05rem; margin: 0; }
+  .chart-head .sub { font-family: var(--mono); font-size: 0.75rem; color: var(--stone); margin-top: 3px; }
+  .chart-legend {
+    display: flex; gap: 18px; margin-top: 16px; padding-top: 14px;
+    border-top: 1px solid var(--line); flex-wrap: wrap;
+  }
+  .legend-item { display: flex; gap: 7px; align-items: center; font-size: 0.8rem; color: var(--slate); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+  .chart-svg { width: 100%; display: block; overflow: visible; }
+
+  /* ── KPIs ────────────────────────────────────── */
+  .kpi-stack { display: flex; flex-direction: column; gap: 10px; }
+  .kpi-box {
+    flex: 1;
+    background: var(--bone);
+    border-radius: var(--r-md);
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .kpi-box.accent-moss { background: var(--moss); color: var(--cream); }
+  .kpi-box.accent-moss .kl { color: rgba(244,239,228,0.65); }
+  .kpi-box .kl {
+    font-family: var(--mono);
+    font-size: 0.67rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--stone);
+  }
+  .kpi-box .kv { font-family: var(--serif); font-size: 1.35rem; color: var(--ink); line-height: 1.1; }
+  .kpi-box.accent-moss .kv { color: var(--cream); }
+  .kpi-box .ksub { font-family: var(--mono); font-size: 0.72rem; color: var(--stone); margin-top: 1px; }
+  .kpi-compare { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+  .kpi-pbar { flex: 1; height: 4px; border-radius: 2px; background: rgba(14,31,26,0.12); overflow: hidden; }
+  .kpi-pbar-fill { height: 100%; border-radius: 2px; background: var(--gold); transition: width 400ms; }
+  .kpi-box.accent-moss .kpi-pbar { background: rgba(244,239,228,0.15); }
+  .kpi-box.accent-moss .kpi-pbar-fill { background: var(--amber); }
+  .kpi-pct { font-family: var(--mono); font-size: 0.7rem; color: var(--stone); white-space: nowrap; }
+  .kpi-box.accent-moss .kpi-pct { color: rgba(244,239,228,0.6); }
+
+  /* ── Month pills (inside analytics) ─────────── */
+  .month-bar { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 14px; }
+
+  /* ── Client characteristics filter ──────────── */
+  .char-filter-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 14px 16px;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+  }
+  .cf-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .cf-label {
+    font-family: var(--mono);
+    font-size: 0.67rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--stone);
+    min-width: 90px;
+    flex-shrink: 0;
+  }
+  .cf-pills { display: flex; gap: 4px; flex-wrap: wrap; }
+  .cf-pill {
+    padding: 4px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: var(--bone);
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    color: var(--stone);
+    cursor: pointer;
+    transition: all 100ms;
+  }
+  .cf-pill:hover { border-color: var(--ink); color: var(--ink); }
+  .cf-pill.active { background: var(--ink); color: var(--cream); border-color: var(--ink); }
+
+  /* ── Secciones por cliente ───────────────────── */
+  .cli-section {
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    background: var(--paper);
+    margin-bottom: 12px;
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+  }
+  .cli-section.prospect {
+    border-style: dashed;
+    border-color: rgba(201,162,39,0.45);
+  }
+  .cli-section-head {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 18px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 100ms;
+  }
+  .cli-section-head:hover { background: var(--bone); }
+  .cli-section.prospect .cli-section-head { background: rgba(201,162,39,0.03); }
+  .cli-section.prospect .cli-section-head:hover { background: rgba(201,162,39,0.07); }
+  .cli-section.open .cli-section-head { border-bottom: 1px solid var(--line); }
+  .cs-avatar {
+    width: 36px; height: 36px;
+    border-radius: 9px;
+    background: linear-gradient(135deg, #0F5132, #C9A227);
+    color: var(--cream);
+    display: grid; place-items: center;
+    font-family: var(--serif);
+    font-size: 0.95rem;
+    font-weight: 500;
+    flex-shrink: 0;
+  }
+  .cli-section.prospect .cs-avatar {
+    background: linear-gradient(135deg, #C9A227, #8A6B0F);
+  }
+  .cs-name { font-size: 0.92rem; font-weight: 500; color: var(--ink); }
+  .cs-rfc { font-family: var(--mono); font-size: 0.7rem; color: var(--stone); margin-top: 1px; }
+  .cs-info { flex: 1; min-width: 0; }
+  .cs-stats { display: flex; gap: 0; }
+  .cs-stat {
+    text-align: right;
+    padding: 0 16px;
+    border-left: 1px solid var(--line);
+    min-width: 100px;
+  }
+  .cs-stat .sl { font-family: var(--mono); font-size: 0.67rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--stone); margin-bottom: 2px; }
+  .cs-stat .sv { font-family: var(--serif); font-size: 1rem; color: var(--ink); }
+  .cs-stat .sv.green { color: var(--success); }
+  .cs-stat .sv.amber { color: #96720F; }
+  .cs-chevron { color: var(--stone); transition: transform 220ms; flex-shrink: 0; }
+  .cli-section.open .cs-chevron { transform: rotate(180deg); }
+  .cli-section-body { display: none; }
+  .cli-section.open .cli-section-body { display: block; }
+
+  /* ── Prospect badge & promote btn ────────────── */
+  .prospect-chip {
+    font-family: var(--mono);
+    font-size: 0.64rem;
+    padding: 2px 7px;
+    border-radius: 4px;
+    background: rgba(201,162,39,0.15);
+    color: #7A5F00;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    font-weight: 700;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .promote-btn {
+    padding: 4px 12px;
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    background: transparent;
+    color: var(--stone);
+    cursor: pointer;
+    transition: all 100ms;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .promote-btn:hover { border-color: var(--moss); color: var(--moss); background: rgba(15,81,50,0.05); }
+
+  /* ── Tabla de filas ──────────────────────────── */
+  .flujo-table { width: 100%; border-collapse: collapse; }
+  .flujo-table th {
+    font-family: var(--mono);
+    font-size: 0.67rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--stone);
+    padding: 9px 16px;
+    text-align: left;
+    background: var(--bone);
+    border-bottom: 1px solid var(--line);
+    white-space: nowrap;
+  }
+  .flujo-table th.r { text-align: right; }
+  .flujo-table td {
+    padding: 10px 16px;
+    font-size: 0.875rem;
+    color: var(--ink);
+    border-bottom: 1px solid var(--line);
+    vertical-align: middle;
+  }
+  .flujo-table td.r { text-align: right; font-family: var(--mono); }
+  .flujo-table td.mono { font-family: var(--mono); font-size: 0.8rem; }
+  .flujo-table tr:last-child td { border-bottom: 0; }
+  .flujo-table tr.frow-invoice:hover { background: rgba(15,81,50,0.035); }
+  .flujo-table tr.frow-forecast { background: rgba(201,162,39,0.03); }
+  .flujo-table tr.frow-forecast:hover { background: rgba(201,162,39,0.07); }
+
+  /* ── Type badges ─────────────────────────────── */
+  .tbadge {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+  }
+  .tbadge-inv     { background: rgba(15,81,50,0.1);   color: #0F5132; }
+  .tbadge-fc      { background: rgba(201,162,39,0.14); color: #96720F; }
+  .tbadge-paid    { background: rgba(47,125,79,0.12);  color: var(--success); }
+  .tbadge-pending { background: rgba(196,139,42,0.14); color: var(--warn); }
+  .tbadge-overdue { background: rgba(169,58,43,0.12);  color: var(--danger); }
+  .tbadge-sent    { background: rgba(58,107,140,0.12); color: var(--info, #3A6B8C); }
+  .tbadge-draft   { background: rgba(107,107,94,0.14); color: var(--stone); }
+
+  .bank-pill {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--stone);
+    background: var(--bone);
+    padding: 2px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+
+  /* ── Row actions ─────────────────────────────── */
+  .row-acts { display: flex; gap: 3px; opacity: 0; transition: opacity 100ms; }
+  tr:hover .row-acts { opacity: 1; }
+  .ract {
+    width: 26px; height: 26px;
+    border-radius: 5px; border: 0;
+    background: transparent;
+    color: var(--stone);
+    cursor: pointer;
+    display: grid; place-items: center;
+    transition: all 80ms;
+  }
+  .ract:hover { background: var(--bone); color: var(--ink); }
+  .ract svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .ract.danger:hover { color: var(--danger); }
+
+  /* ── Inline add row ──────────────────────────── */
+  .add-trigger {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 18px;
+    font-family: var(--mono);
+    font-size: 0.76rem;
+    color: var(--stone);
+    cursor: pointer;
+    transition: background 100ms, color 100ms;
+    border-top: 1px dashed var(--line);
+    background: transparent;
+    width: 100%;
+    text-align: left;
+    border-left: 0; border-right: 0; border-bottom: 0;
+  }
+  .add-trigger:hover { background: var(--bone); color: var(--moss); }
+
+  .irow { display: none; }
+  .irow.show { display: table-row; }
+  .irow td {
+    padding: 8px 8px;
+    background: rgba(201,162,39,0.06);
+    border-bottom: 2px solid rgba(201,162,39,0.3) !important;
+    border-top: 2px solid rgba(201,162,39,0.3);
+  }
+  .ii {
+    width: 100%;
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    padding: 6px 9px;
+    font-family: var(--sans);
+    font-size: 0.82rem;
+    color: var(--ink);
+    background: var(--paper);
+    outline: none;
+    transition: border-color 120ms;
+    box-sizing: border-box;
+  }
+  .ii:focus { border-color: var(--ink); }
+  .ii.mono { font-family: var(--mono); }
+  .ii-sel {
+    width: 100%;
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    padding: 6px 8px;
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    color: var(--ink);
+    background: var(--paper);
+    outline: none;
+    cursor: pointer;
+    appearance: none;
+  }
+  .type-tog {
+    display: flex;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    overflow: hidden;
+    width: 100%;
+  }
+  .type-tog button {
+    flex: 1;
+    padding: 6px 4px;
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    color: var(--stone);
+    transition: all 100ms;
+    white-space: nowrap;
+  }
+  .type-tog button.t-fc  { background: rgba(201,162,39,0.15); color: #7A5F00; font-weight: 600; }
+  .type-tog button.t-inv { background: rgba(15,81,50,0.15); color: #0F5132; font-weight: 600; }
+  .isave {
+    padding: 7px 16px;
+    background: var(--ink);
+    color: var(--cream);
+    border: 0; border-radius: 5px;
+    font-family: var(--mono); font-size: 0.78rem;
+    cursor: pointer; white-space: nowrap;
+  }
+  .isave:hover { opacity: 0.85; }
+  .icancel {
+    padding: 7px 10px;
+    background: transparent;
+    color: var(--stone);
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    font-size: 0.78rem;
+    cursor: pointer;
+  }
+  .icancel:hover { color: var(--ink); border-color: var(--ink); }
+  .empty-rows {
+    padding: 28px 24px;
+    text-align: center;
+    color: var(--stone);
+    font-size: 0.85rem;
+    font-family: var(--mono);
+  }
+
+  /* ── Prospect form (bottom) ──────────────────── */
+  .new-cli-btn {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    padding: 16px 20px;
+    border: 2px dashed var(--line);
+    border-radius: var(--r-lg);
+    background: transparent;
+    cursor: pointer;
+    color: var(--stone);
+    transition: all 150ms;
+    text-align: left;
+    margin-top: 4px;
+  }
+  .new-cli-btn:hover { border-color: var(--gold, #C9A227); color: var(--ink); background: var(--paper); }
+  .new-cli-btn .ncb-ic {
+    width: 36px; height: 36px;
+    border-radius: 9px;
+    background: var(--bone);
+    display: grid; place-items: center;
+    flex-shrink: 0;
+  }
+  .new-cli-form {
+    display: none;
+    border: 2px solid var(--ink);
+    border-radius: var(--r-lg);
+    padding: 22px 24px;
+    background: var(--paper);
+    margin-top: 4px;
+    box-shadow: var(--shadow-md);
+  }
+  .new-cli-form.show { display: block; }
+  .ncf-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .ncf-head h3 { font-size: 1rem; }
+  .ncf-grid {
+    display: grid;
+    grid-template-columns: 2fr 1.5fr 1fr 1fr 1fr;
+    gap: 10px;
+    align-items: end;
+  }
+  @media (max-width: 1000px) { .ncf-grid { grid-template-columns: 1fr 1fr 1fr; } }
+  @media (max-width: 700px) { .ncf-grid { grid-template-columns: 1fr 1fr; } }
+  .ncf-field label {
+    display: block;
+    font-family: var(--mono);
+    font-size: 0.67rem;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--stone);
+    margin-bottom: 4px;
+  }
+  .ncf-field input, .ncf-field select {
+    width: 100%;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 8px 11px;
+    font-family: var(--sans);
+    font-size: 0.84rem;
+    color: var(--ink);
+    background: var(--paper);
+    outline: none;
+    box-sizing: border-box;
+    transition: border-color 120ms;
+  }
+  .ncf-field input:focus { border-color: var(--ink); }
+
+  /* ── Bill (facturar) button ──────────────────── */
+  .bill-btn {
+    padding: 4px 12px;
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    border: 1px solid rgba(15,81,50,0.35);
+    border-radius: 5px;
+    background: rgba(15,81,50,0.07);
+    color: #0F5132;
+    cursor: pointer;
+    transition: all 100ms;
+    white-space: nowrap;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .bill-btn:hover { background: rgba(15,81,50,0.14); border-color: #0F5132; }
+  .bill-btn svg { width: 11px; height: 11px; stroke: currentColor; fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* ── Bill modal ───────────────────────────────── */
+  .bill-svc-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 7px 12px; background: var(--bone);
+    border-radius: 6px; margin-bottom: 3px; margin-top: 8px;
+    border: 1px solid var(--line);
+  }
+  .bill-svc-head:first-child { margin-top: 0; }
+  .bill-svc-label {
+    display: flex; align-items: center; gap: 8px; cursor: pointer; flex: 1;
+    font-family: var(--mono); font-size: 0.72rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.07em; color: var(--stone);
+  }
+  .bill-svc-label input[type=checkbox] { accent-color: var(--moss); cursor: pointer; }
+  .bill-svc-amt { font-family: var(--mono); font-size: 0.78rem; color: var(--stone); }
+  .bill-fc-list { display: flex; flex-direction: column; gap: 2px; padding: 3px 0 6px 22px; }
+  .bill-fc-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 6px 10px; border-radius: 5px; cursor: pointer; transition: background 60ms;
+  }
+  .bill-fc-item:hover { background: var(--bone); }
+  .bill-fc-item input[type=checkbox] { accent-color: var(--moss); cursor: pointer; flex-shrink: 0; }
+  .bill-fc-concept { flex: 1; font-size: 0.83rem; color: var(--ink); }
+  .bill-fc-amt { font-family: var(--mono); font-size: 0.8rem; color: var(--stone); white-space: nowrap; }
+  .bill-select-all {
+    display: flex; align-items: center; gap: 7px; margin-bottom: 8px;
+    font-family: var(--mono); font-size: 0.72rem; color: var(--stone); cursor: pointer;
+  }
+  .bill-select-all input[type=checkbox] { accent-color: var(--moss); cursor: pointer; }
+
+  /* ── Quote & delete buttons ──────────────────── */
+  .quote-btn {
+    padding: 4px 12px;
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    border: 1px solid rgba(201,162,39,0.5);
+    border-radius: 5px;
+    background: rgba(201,162,39,0.08);
+    color: #7A5F00;
+    cursor: pointer;
+    transition: all 100ms;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .quote-btn:hover { background: rgba(201,162,39,0.18); border-color: #C9A227; }
+  .delete-prospect-btn {
+    width: 28px; height: 28px;
+    border-radius: 5px; border: 1px solid var(--line);
+    background: transparent;
+    color: var(--stone);
+    cursor: pointer;
+    display: grid; place-items: center;
+    transition: all 80ms;
+    flex-shrink: 0;
+  }
+  .delete-prospect-btn:hover { border-color: var(--danger); color: var(--danger); background: rgba(169,58,43,0.06); }
+  .delete-prospect-btn svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* ── Quote modal internals ───────────────────── */
+  .qm-fc-list { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
+  .qm-fc-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 12px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--bone);
+    cursor: pointer;
+    transition: background 80ms;
+  }
+  .qm-fc-item:hover { background: var(--paper); }
+  .qm-fc-item input[type=checkbox] { accent-color: var(--moss); width: 15px; height: 15px; cursor: pointer; flex-shrink: 0; }
+  .qm-fc-item .qfc-label { flex: 1; font-size: 0.84rem; color: var(--ink); }
+  .qm-fc-item .qfc-amt { font-family: var(--mono); font-size: 0.82rem; color: var(--stone); }
+  .qm-totals { padding: 10px 12px 0; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+  .qm-total-row { display: flex; align-items: baseline; gap: 16px; }
+  .qm-total-row .qt-label { font-family: var(--mono); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.07em; color: var(--stone); min-width: 90px; text-align: right; }
+  .qm-total-row .qt-sub { font-family: var(--mono); font-size: 0.88rem; color: var(--stone); }
+  .qm-total-row.grand { border-top: 1px solid var(--line); padding-top: 6px; margin-top: 2px; }
+  .qm-total-row.grand .qt-val { font-family: var(--serif); font-size: 1.3rem; color: var(--ink); }
+  .qm-iva-toggle { display: flex; align-items: center; gap: 7px; font-family: var(--mono); font-size: 0.73rem; color: var(--stone); cursor: pointer; margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--line); }
+  .qm-iva-toggle input[type=checkbox] { accent-color: var(--moss); width: 13px; height: 13px; cursor: pointer; }
+  .qfc-concept-input {
+    flex: 1;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    padding: 3px 7px;
+    font-family: var(--sans);
+    font-size: 0.84rem;
+    color: var(--ink);
+    background: transparent;
+    outline: none;
+    transition: border-color 100ms, background 100ms;
+    min-width: 0;
+  }
+  .qfc-concept-input:hover { border-color: var(--line); }
+  .qfc-concept-input:focus { border-color: var(--ink); background: var(--paper); }
+  .qfc-amt-input {
+    width: 96px; flex-shrink: 0; text-align: right;
+    font-family: var(--mono); font-size: 0.82rem; color: var(--ink);
+    border: 1px solid transparent; border-radius: 4px;
+    padding: 3px 7px; background: transparent; outline: none;
+    transition: border-color 100ms, background 100ms;
+  }
+  .qfc-amt-input:hover { border-color: var(--line); }
+  .qfc-amt-input:focus { border-color: var(--ink); background: var(--paper); }
+
+  /* ── Cotizaciones generadas ──────────────────── */
+  .quotes-gen-section { border-top: 1px solid var(--line); padding: 14px 18px 16px; background: var(--bone); }
+  .qg-head { font-family: var(--mono); font-size: 0.67rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--stone); margin-bottom: 10px; }
+  .qg-list { display: flex; flex-direction: column; gap: 6px; }
+  .qg-item { display: flex; align-items: center; gap: 12px; padding: 9px 14px; background: var(--paper); border: 1px solid var(--line); border-radius: 7px; }
+  .qg-folio { font-family: var(--mono); font-size: 0.8rem; font-weight: 600; color: var(--ink); }
+  .qg-date { font-family: var(--mono); font-size: 0.7rem; color: var(--stone); margin-top: 1px; }
+  .qg-lines { font-family: var(--mono); font-size: 0.7rem; color: var(--stone); }
+  .qg-total { font-family: var(--serif); font-size: 1rem; color: var(--ink); margin-left: auto; }
+  .qg-reprint { padding: 4px 11px; font-family: var(--mono); font-size: 0.68rem; border: 1px solid var(--line); border-radius: 4px; background: transparent; color: var(--stone); cursor: pointer; transition: all 80ms; white-space: nowrap; }
+  .qg-reprint:hover { border-color: var(--moss); color: var(--moss); }
+
+  /* ── Autocomplete ────────────────────────────── */
+  .autocomplete-wrap { position: relative; }
+  .autocomplete-dropdown {
+    position: absolute; top: 100%; left: 0; right: 0;
+    background: var(--paper); border: 1.5px solid var(--ink);
+    border-top: 0; border-radius: 0 0 7px 7px; z-index: 200;
+    box-shadow: var(--shadow-md); max-height: 200px; overflow-y: auto;
+    display: none;
+  }
+  .autocomplete-item {
+    padding: 8px 12px; cursor: pointer; font-size: 0.84rem; transition: background 80ms;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .autocomplete-item:hover { background: var(--bone); }
+  .autocomplete-item .ac-badge {
+    font-family: var(--mono); font-size: 0.66rem; padding: 1px 6px; border-radius: 3px;
+    background: rgba(201,162,39,0.14); color: #7A5F00; text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .autocomplete-item .ac-badge.active { background: rgba(15,81,50,0.1); color: #0F5132; }
+
+  /* ── Service grouping ────────────────────────── */
+  .svc-header-row td {
+    background: var(--bone) !important; padding: 5px 14px 5px 16px !important;
+    border-bottom: 1px solid var(--line) !important; border-top: 1px solid var(--line) !important;
+  }
+  .svc-header-inner { display: flex; align-items: center; justify-content: space-between; }
+  .svc-label {
+    font-family: var(--mono); font-size: 0.63rem; text-transform: uppercase;
+    letter-spacing: 0.1em; color: var(--stone); font-weight: 600;
+  }
+  .svc-quote-btn {
+    padding: 2px 9px; font-family: var(--mono); font-size: 0.64rem;
+    border: 1px solid rgba(201,162,39,0.45); border-radius: 4px;
+    background: rgba(201,162,39,0.07); color: #7A5F00;
+    cursor: pointer; transition: all 80ms; white-space: nowrap; display: flex; align-items: center; gap: 4px;
+  }
+  .svc-quote-btn:hover { background: rgba(201,162,39,0.18); border-color: #C9A227; }
+  .svc-quote-btn svg { width: 10px; height: 10px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* ── Quote modal service headers ─────────────── */
+  .qm-svc-head {
+    font-family: var(--mono); font-size: 0.64rem; text-transform: uppercase;
+    letter-spacing: 0.09em; color: var(--stone); font-weight: 600;
+    padding: 10px 2px 4px; margin-top: 6px; border-top: 1px solid var(--line);
+  }
+  .qm-svc-head:first-child { border-top: 0; margin-top: 0; padding-top: 2px; }
+
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar"></aside>
+  <main class="main">
+
+    <!-- Topbar -->
+    <div class="topbar">
+      <div class="title">
+        <div class="eyebrow">Operaciones</div>
+        <h1 style="margin-top:6px;font-size:clamp(1.6rem,3vw,2.2rem);">Flujo de ingresos</h1>
+        <p style="margin:4px 0 0;color:var(--stone);">Facturas y proyecciones por cliente — todo en un lugar.</p>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn btn-secondary btn-sm" onclick="openProspectForm()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Nueva proyección
+        </button>
+      </div>
+    </div>
+
+    <!-- ── Main filter bar (always visible) ──── -->
+    <div class="f-bar">
+      <div class="fpill" id="clientFilterPill">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <select id="clientFilter"><option value="">Todos los clientes</option></select>
+      </div>
+      <div style="display:flex;gap:4px;" id="typePills">
+        <button class="fpill" data-type="">Todo</button>
+        <button class="fpill" data-type="invoice">Facturas</button>
+        <button class="fpill" data-type="forecast">Proyectos</button>
+      </div>
+    </div>
+
+    <!-- ── Analytics toggle ───────────────────── -->
+    <button class="panel-toggle" id="analyticsToggle" onclick="togglePanel('analytics')">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="18" y="3" width="4" height="18"/><rect x="10" y="8" width="4" height="13"/><rect x="2" y="13" width="4" height="8"/></svg>
+      <span class="pt-label">Analíticos · Gráfica & KPIs</span>
+      <span class="pt-meta">últimos 6 meses</span>
+      <svg class="pt-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+    </button>
+    <div class="panel-body" id="analyticsPanel" style="display:none;">
+      <div class="month-bar" id="monthPills"></div>
+      <div class="charts-grid">
+        <div class="chart-card">
+          <div class="chart-head">
+            <div>
+              <h3>Flujo mensual</h3>
+              <div class="sub">Facturado · Cobrado · Proyectado — últimos 6 meses</div>
+            </div>
+          </div>
+          <svg class="chart-svg" id="barChart" height="220" viewBox="0 0 640 220"></svg>
+          <div class="chart-legend">
+            <div class="legend-item"><div class="legend-dot" style="background:#0F5132;"></div>Facturado</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#2F7D4F;"></div>Cobrado</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#C9A227;"></div>Forecast</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#E8D88A;border:1px dashed #C9A227;"></div>Pendiente</div>
+          </div>
+        </div>
+        <div class="kpi-stack">
+          <div class="kpi-box accent-moss">
+            <div class="kl">Total facturado</div>
+            <div class="kv" id="kv-billed">—</div>
+            <div class="kpi-compare">
+              <div class="kpi-pbar"><div class="kpi-pbar-fill" id="kpb-billed" style="width:0%"></div></div>
+              <div class="kpi-pct" id="kpp-billed">0% cobrado</div>
+            </div>
+          </div>
+          <div class="kpi-box">
+            <div class="kl">Cobrado</div>
+            <div class="kv" id="kv-paid" style="color:var(--success);">—</div>
+            <div class="ksub" id="ks-paid">del período</div>
+          </div>
+          <div class="kpi-box">
+            <div class="kl">Proyectado (forecast)</div>
+            <div class="kv" id="kv-fc" style="color:#96720F;">—</div>
+            <div class="ksub" id="ks-fc">entradas de forecast</div>
+          </div>
+          <div class="kpi-box">
+            <div class="kl">Por cobrar</div>
+            <div class="kv" id="kv-recv">—</div>
+            <div class="ksub" id="ks-recv">facturas pendientes</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Client characteristics filter ─────── -->
+    <button class="panel-toggle" id="charFilterToggle" onclick="togglePanel('charFilter')">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+      <span class="pt-label">Filtros de cliente</span>
+      <span class="pt-meta" id="charFilterMeta">sin filtros activos</span>
+      <svg class="pt-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+    </button>
+    <div class="panel-body" id="charFilterPanel" style="display:none;">
+      <div class="char-filter-grid">
+        <div class="cf-row">
+          <span class="cf-label">Estado</span>
+          <div class="cf-pills" id="cfStatus">
+            <button class="cf-pill active" data-val="">Todos</button>
+            <button class="cf-pill" data-val="active">Activos</button>
+            <button class="cf-pill" data-val="prospect">Prospectos</button>
+          </div>
+        </div>
+        <div class="cf-row">
+          <span class="cf-label">Días crédito</span>
+          <div class="cf-pills" id="cfTerms">
+            <button class="cf-pill active" data-val="">Todos</button>
+            <button class="cf-pill" data-val="15">15 días</button>
+            <button class="cf-pill" data-val="30">30 días</button>
+            <button class="cf-pill" data-val="60">60 días</button>
+            <button class="cf-pill" data-val="90">90 días</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Prospect trigger button -->
+    <button class="new-cli-btn" id="prospectBtn" onclick="openProspectForm()">
+      <div class="ncb-ic">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </div>
+      <div>
+        <div style="font-size:0.88rem;font-weight:500;">Agregar proyección de cliente potencial</div>
+        <div style="font-size:0.76rem;font-family:var(--mono);color:var(--stone);margin-top:1px;">Genera líneas de forecast para un prospecto antes de registrarlo como cliente</div>
+      </div>
+    </button>
+
+    <!-- Prospect form -->
+    <div class="new-cli-form" id="prospectForm">
+      <div class="ncf-head">
+        <div>
+          <h3>Nueva proyección de prospecto</h3>
+          <p style="margin:3px 0 0;font-size:0.78rem;font-family:var(--mono);color:var(--stone);">Se generarán líneas de forecast editables, una por mes. Puedes convertirlo en cliente cuando esté listo.</p>
+        </div>
+        <button onclick="closeProspectForm()" style="background:transparent;border:0;cursor:pointer;color:var(--stone);padding:4px;margin-left:12px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="ncf-grid" style="margin-top:14px;">
+        <div class="ncf-field">
+          <label>Cliente potencial *</label>
+          <div class="autocomplete-wrap">
+            <input type="text" id="pfName" placeholder="Empresa o persona…" autocomplete="off">
+            <div class="autocomplete-dropdown" id="pfNameDropdown"></div>
+          </div>
+        </div>
+        <div class="ncf-field">
+          <label>Tipo de servicio</label>
+          <select id="pfService" onchange="onPfServiceChange()" style="width:100%;border:1px solid var(--line);border-radius:6px;padding:8px 11px;font-family:var(--sans);font-size:0.84rem;color:var(--ink);background:var(--paper);outline:none;box-sizing:border-box;cursor:pointer;appearance:none;"></select>
+          <div id="pfServiceAdd" style="display:none;margin-top:5px;gap:5px;">
+            <input type="text" id="pfServiceNew" placeholder="Nombre del servicio…" style="flex:1;border:1px solid var(--line);border-radius:6px;padding:7px 10px;font-family:var(--sans);font-size:0.82rem;color:var(--ink);background:var(--paper);outline:none;box-sizing:border-box;width:100%;">
+            <button onclick="confirmPfNewService()" style="margin-top:4px;padding:5px 12px;background:var(--ink);color:var(--cream);border:0;border-radius:5px;font-family:var(--mono);font-size:0.75rem;cursor:pointer;">✓ Guardar</button>
+          </div>
+        </div>
+        <div class="ncf-field"><label>Meses estimados</label><input type="number" id="pfMonths" value="3" min="1" max="24"></div>
+        <div class="ncf-field"><label>Monto mensual MXN</label><input type="number" id="pfAmount" placeholder="0.00" min="0" step="0.01"></div>
+        <div class="ncf-field" style="display:flex;align-items:flex-end;gap:8px;">
+          <button class="btn btn-primary btn-sm" style="flex:1;" onclick="saveProspect()">Crear proyección</button>
+          <button class="btn btn-ghost btn-sm" onclick="closeProspectForm()">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Secciones por cliente ──────────────── -->
+    <div id="flujoSections" style="margin-top:12px;"></div>
+
+  </main>
+</div>
+
+<script src="app.js"></script>
+<script>
+(function () {
+  const { Store, Calc, fmt, mountSidebar, toast, Modal, addDays, clientInitials, nextFolioForClient } = Jobby;
+  mountSidebar('flujo');
+
+  const BANKS = ['Bank of America', 'Kapital', 'BBVA', 'Banamex', 'Banorte', 'Santander', 'HSBC', 'Afirme', 'Otro'];
+
+  let filterMonth = '', filterClient = '', filterType = null;
+  let charFilterStatus = '', charFilterTerms = '';
+  let currentAddType = {};
+  let pfSelectedClientId = null;
+  const sessionCreatedIds = new Set();
+
+  // ── Service helpers ──────────────────────────────────────────
+  function getServices() {
+    if (!Store._db.services) Store._db.services = [];
+    return Store._db.services;
+  }
+  function addService(name) {
+    if (!Store._db.services) Store._db.services = [];
+    if (name && !Store._db.services.includes(name)) {
+      Store._db.services.push(name);
+      Store.save();
+    }
+  }
+  function buildServiceOpts() {
+    const svcs = getServices();
+    const addOpt = `<option value="__add__">+ Agregar servicio…</option>`;
+    const svcOpts = svcs.map(s => `<option value="${s}">${s}</option>`).join('');
+    return `<option value="">— Sin servicio —</option>${addOpt}${svcOpts}`;
+  }
+
+  // ── Panel toggles ────────────────────────────────────────────
+  window.togglePanel = (which) => {
+    const panel = document.getElementById(which + 'Panel');
+    const toggle = document.getElementById(which + 'Toggle');
+    const isOpen = panel.style.display !== 'none';
+    panel.style.display = isOpen ? 'none' : '';
+    toggle.classList.toggle('open', !isOpen);
+  };
+
+  // ── Month pills (inside analytics panel) ────────────────────
+  (function buildMonthPills() {
+    const now = new Date();
+    const pills = document.getElementById('monthPills');
+    const months = [];
+    for (let i = 5; i >= -1; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const ym = d.toISOString().slice(0, 7);
+      const label = d.toLocaleDateString('es-MX', { month: 'short' }).replace('.', '') + " '" + String(d.getFullYear()).slice(2);
+      months.push({ ym, label });
+    }
+    pills.innerHTML = `<button class="fpill active" data-ym="">Todo</button>` +
+      months.map(m => `<button class="fpill" data-ym="${m.ym}">${m.label}</button>`).join('');
+    pills.addEventListener('click', e => {
+      const b = e.target.closest('[data-ym]');
+      if (!b) return;
+      pills.querySelectorAll('.fpill').forEach(p => p.classList.remove('active'));
+      b.classList.add('active');
+      filterMonth = b.dataset.ym;
+      render();
+    });
+  })();
+
+  // ── Client filter ────────────────────────────────────────────
+  function refreshClientFilter() {
+    const sel = document.getElementById('clientFilter');
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">Todos los clientes</option>';
+    Store.all('clients').forEach(c => {
+      const o = document.createElement('option');
+      o.value = c.id;
+      o.textContent = c.name + (c.status === 'prospect' ? ' · Prospecto' : '');
+      if (c.id === cur) o.selected = true;
+      sel.appendChild(o);
+    });
+  }
+  document.getElementById('clientFilter').addEventListener('change', function () {
+    filterClient = this.value;
+    document.getElementById('clientFilterPill').classList.toggle('sel-active', !!this.value);
+    render();
+  });
+
+  // ── Type filter ──────────────────────────────────────────────
+  document.getElementById('typePills').addEventListener('click', e => {
+    const b = e.target.closest('[data-type]');
+    if (!b) return;
+    document.querySelectorAll('#typePills .fpill').forEach(p => p.classList.remove('active'));
+    b.classList.add('active');
+    filterType = b.dataset.type;
+    render();
+  });
+
+  // ── Char filter ──────────────────────────────────────────────
+  function updateCharFilterMeta() {
+    const parts = [];
+    if (charFilterStatus === 'active') parts.push('Activos');
+    else if (charFilterStatus === 'prospect') parts.push('Prospectos');
+    if (charFilterTerms) parts.push(charFilterTerms + ' días');
+    document.getElementById('charFilterMeta').textContent = parts.length ? parts.join(' · ') : 'sin filtros activos';
+  }
+
+  document.getElementById('cfStatus').addEventListener('click', e => {
+    const b = e.target.closest('.cf-pill');
+    if (!b) return;
+    document.querySelectorAll('#cfStatus .cf-pill').forEach(p => p.classList.remove('active'));
+    b.classList.add('active');
+    charFilterStatus = b.dataset.val;
+    updateCharFilterMeta();
+    render();
+  });
+  document.getElementById('cfTerms').addEventListener('click', e => {
+    const b = e.target.closest('.cf-pill');
+    if (!b) return;
+    document.querySelectorAll('#cfTerms .cf-pill').forEach(p => p.classList.remove('active'));
+    b.classList.add('active');
+    charFilterTerms = b.dataset.val;
+    updateCharFilterMeta();
+    render();
+  });
+
+  // ── Data helpers ─────────────────────────────────────────────
+  function last6Months() {
+    const now = new Date();
+    const months = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      months.push(d.toISOString().slice(0, 7));
+    }
+    return months;
+  }
+
+  function getClientRows(clientId) {
+    const allInvoices = Store.all('invoices')
+      .filter(i => i.type === 'emitted' && i.clientId === clientId && i.status !== 'draft' && i.status !== 'cancelled');
+    const allForecasts = Store.all('forecasts').filter(f => f.clientId === clientId);
+    const payments = Store.all('payments');
+    const bankMap = {};
+    payments.forEach(p => { if (p.bank && p.bank !== 'N/A') bankMap[p.invoiceId] = p.bank; });
+
+    const rows = [];
+    allInvoices.forEach(inv => {
+      if (filterMonth && !inv.issueDate.startsWith(filterMonth)) return;
+      rows.push({ date: inv.issueDate, concept: inv.folio, rowType: 'invoice', amount: inv.total, status: inv.status, bank: bankMap[inv.id] || null, id: inv.id, service: inv.service || null });
+    });
+    allForecasts.forEach(f => {
+      if (filterMonth && !f.date.startsWith(filterMonth)) return;
+      rows.push({ date: f.date, concept: f.concept, rowType: 'forecast', amount: f.amount, status: f.status || 'pending', bank: f.bank || null, id: f.id, service: f.service || null });
+    });
+    return rows.sort((a, b) => a.date.localeCompare(b.date));
+  }
+
+  function statusLabel(s) {
+    return { paid: 'Pagada', pending: 'Pendiente', overdue: 'Vencida', sent: 'Enviada', draft: 'Borrador' }[s] || s;
+  }
+
+  // ── Bar chart ────────────────────────────────────────────────
+  function drawChart() {
+    const months = last6Months();
+    const allInvoices = Store.all('invoices').filter(i => i.type === 'emitted' && i.status !== 'draft' && i.status !== 'cancelled');
+    const allPayments = Store.all('payments');
+    const allForecasts = Store.all('forecasts');
+    const payMap = {};
+    allPayments.forEach(p => { payMap[p.invoiceId] = (payMap[p.invoiceId] || 0) + p.amount; });
+
+    const data = months.map(ym => {
+      const inv = allInvoices.filter(i => i.issueDate.startsWith(ym));
+      const billed = inv.reduce((s, i) => s + i.total, 0);
+      const paid = inv.reduce((s, i) => s + Math.min(i.total, payMap[i.id] || 0), 0);
+      const forecast = allForecasts.filter(f => f.date.startsWith(ym)).reduce((s, f) => s + f.amount, 0);
+      return { ym, billed, paid, pending: billed - paid, forecast };
+    });
+
+    const W = 640, H = 220, ML = 68, MR = 16, MT = 10, MB = 36;
+    const cW = W - ML - MR, cH = H - MT - MB;
+    const maxVal = Math.max(...data.map(d => Math.max(d.billed, d.forecast)), 1);
+    const yScale = v => cH - (v / maxVal) * cH;
+    const groupW = cW / months.length;
+    const barW = Math.min(16, groupW * 0.2);
+    const gap = 2;
+
+    let yTicks = '';
+    for (let i = 0; i <= 4; i++) {
+      const v = (maxVal / 4) * i;
+      const y = MT + yScale(v);
+      yTicks += `<line x1="${ML}" y1="${y}" x2="${W - MR}" y2="${y}" stroke="#D9D0B8" stroke-width="${i === 0 ? 1 : 0.5}" stroke-dasharray="${i === 0 ? '' : '3,3'}"/>`;
+      yTicks += `<text x="${ML - 6}" y="${y + 4}" text-anchor="end" font-family="'Geist Mono',monospace" font-size="9" fill="#6B6B5E">${fmt.mxnCompact(v)}</text>`;
+    }
+
+    let bars = '';
+    data.forEach((d, i) => {
+      const cx = ML + i * groupW + groupW / 2;
+      const x1 = cx - barW * 1.5 - gap;
+      const x3 = cx + barW * 0.5 + gap;
+      if (d.paid > 0) bars += `<rect x="${x1}" y="${MT + yScale(d.paid)}" width="${barW}" height="${(d.paid / maxVal) * cH}" fill="#2F7D4F" rx="2"/>`;
+      if (d.pending > 0) bars += `<rect x="${x1}" y="${MT + yScale(d.billed)}" width="${barW}" height="${(d.pending / maxVal) * cH}" fill="#0F5132" opacity="0.28" rx="2"/>`;
+      if (d.billed === 0 && d.paid === 0) bars += `<rect x="${x1}" y="${MT + cH - 1}" width="${barW}" height="1" fill="#D9D0B8"/>`;
+      if (d.forecast > 0) bars += `<rect x="${x3}" y="${MT + yScale(d.forecast)}" width="${barW}" height="${(d.forecast / maxVal) * cH}" fill="#C9A227" opacity="0.7" rx="2"/>`;
+      const ml = new Date(d.ym + '-15').toLocaleDateString('es-MX', { month: 'short' }).replace('.', '');
+      bars += `<text x="${cx}" y="${H - MB + 14}" text-anchor="middle" font-family="'Geist Mono',monospace" font-size="9.5" fill="#6B6B5E">${ml}</text>`;
+    });
+    document.getElementById('barChart').innerHTML = yTicks + bars;
+  }
+
+  // ── Render ───────────────────────────────────────────────────
+  function render() {
+    let clients = Store.all('clients');
+    if (filterType === 'invoice') clients = clients.filter(c => (c.status || 'active') !== 'prospect');
+    else if (filterType === 'forecast') clients = clients.filter(c => c.status === 'prospect');
+    if (filterClient) clients = clients.filter(c => c.id === filterClient);
+    if (charFilterStatus) clients = clients.filter(c => (c.status || 'active') === charFilterStatus);
+    if (charFilterTerms) clients = clients.filter(c => String(c.paymentTerms || 30) === charFilterTerms);
+
+    // KPIs (always computed from all clients, ignoring char filter)
+    let gBilled = 0, gPaid = 0, gFc = 0, gRecv = 0, gRecvCount = 0, gFcCount = 0;
+    const allPayments = Store.all('payments');
+    const payMap = {};
+    allPayments.forEach(p => { payMap[p.invoiceId] = (payMap[p.invoiceId] || 0) + p.amount; });
+    Store.all('clients').forEach(c => {
+      Store.all('invoices').filter(i => i.type === 'emitted' && i.clientId === c.id && i.status !== 'draft' && i.status !== 'cancelled').forEach(inv => {
+        if (filterMonth && !inv.issueDate.startsWith(filterMonth)) return;
+        gBilled += inv.total;
+        const p = Math.min(inv.total, payMap[inv.id] || 0);
+        gPaid += p;
+        if (inv.status !== 'paid') { gRecv += inv.total - p; gRecvCount++; }
+      });
+      Store.all('forecasts').filter(f => f.clientId === c.id).forEach(f => {
+        if (filterMonth && !f.date.startsWith(filterMonth)) return;
+        gFc += f.amount; gFcCount++;
+      });
+    });
+    document.getElementById('kv-billed').textContent = fmt.mxnCompact(gBilled);
+    document.getElementById('kv-paid').textContent = fmt.mxnCompact(gPaid);
+    document.getElementById('kv-fc').textContent = fmt.mxnCompact(gFc);
+    document.getElementById('kv-recv').textContent = fmt.mxnCompact(gRecv);
+    document.getElementById('ks-paid').textContent = gBilled > 0 ? `${((gPaid / gBilled) * 100).toFixed(0)}% del facturado` : 'del período';
+    document.getElementById('ks-fc').textContent = `${gFcCount} entrada${gFcCount !== 1 ? 's' : ''}`;
+    document.getElementById('ks-recv').textContent = `${gRecvCount} factura${gRecvCount !== 1 ? 's' : ''} pendiente${gRecvCount !== 1 ? 's' : ''}`;
+    const pctPaid = gBilled > 0 ? Math.min(100, (gPaid / gBilled) * 100) : 0;
+    document.getElementById('kpb-billed').style.width = pctPaid + '%';
+    document.getElementById('kpp-billed').textContent = pctPaid.toFixed(0) + '% cobrado';
+    drawChart();
+
+    // Sections
+    const container = document.getElementById('flujoSections');
+    container.innerHTML = '';
+
+    const activeClients = clients.filter(c => (c.status || 'active') !== 'prospect');
+    const prospects = clients.filter(c => c.status === 'prospect');
+
+    if (filterType === null) {
+      const sessionClients = Store.all('clients').filter(c => sessionCreatedIds.has(c.id));
+      if (!sessionClients.length) {
+        container.innerHTML = `<div style="text-align:center;padding:64px 24px;">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" style="color:var(--line);margin-bottom:14px;display:block;margin-left:auto;margin-right:auto;"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+          <p style="color:var(--stone);font-size:0.85rem;font-family:var(--mono);margin:0;">Selecciona <strong style="color:var(--ink);">Todo</strong>, <strong style="color:var(--ink);">Facturas</strong> o <strong style="color:var(--ink);">Proyectos</strong> para ver los clientes.</p>
+        </div>`;
+        return;
+      }
+      sessionClients.forEach(c => renderSection(c, c.status === 'prospect', container));
+      return;
+    }
+
+    if (!activeClients.length && !prospects.length) {
+      container.innerHTML = `<div style="text-align:center;padding:56px 24px;color:var(--stone);">
+        <h4 style="color:var(--ink);margin-bottom:6px;">Sin resultados</h4>
+        <p>Ajusta los filtros o agrega un nuevo prospecto.</p>
+      </div>`;
+      return;
+    }
+
+    [...activeClients, ...prospects].forEach(client => renderSection(client, client.status === 'prospect', container));
+  }
+
+  function renderSection(client, isProspect, container) {
+    const rows = getClientRows(client.id);
+    const inits = clientInitials(client.name).slice(0, 2);
+    const billed = rows.filter(r => r.rowType === 'invoice').reduce((s, r) => s + r.amount, 0);
+    const fc = rows.filter(r => r.rowType === 'forecast').reduce((s, r) => s + r.amount, 0);
+    const paid = rows.filter(r => r.rowType === 'invoice' && r.status === 'paid').reduce((s, r) => s + r.amount, 0);
+
+    const sec = document.createElement('div');
+    sec.className = 'cli-section' + (isProspect ? ' prospect' : '');
+    sec.dataset.cid = client.id;
+
+    const statsHtml = isProspect
+      ? `<div class="cs-stats">
+          <div class="cs-stat"><div class="sl">Forecast</div><div class="sv amber">${fmt.mxnCompact(fc)}</div></div>
+         </div>
+         <span class="prospect-chip">Prospecto</span>
+         <button class="quote-btn" onclick="openQuoteModal('${client.id}');event.stopPropagation();">
+           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="vertical-align:-1px;margin-right:4px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>Cotización
+         </button>
+         <button class="promote-btn" onclick="promoteToClient('${client.id}');event.stopPropagation();">Convertir en cliente</button>
+         <button class="delete-prospect-btn" onclick="deleteProspect('${client.id}');event.stopPropagation();" title="Eliminar prospecto">
+           <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+         </button>`
+      : `<div class="cs-stats">
+          <div class="cs-stat"><div class="sl">Facturado</div><div class="sv">${fmt.mxnCompact(billed)}</div></div>
+          <div class="cs-stat"><div class="sl">Cobrado</div><div class="sv green">${fmt.mxnCompact(paid)}</div></div>
+          <div class="cs-stat"><div class="sl">Forecast</div><div class="sv amber">${fmt.mxnCompact(fc)}</div></div>
+         </div>
+         ${fc > 0 ? `<button class="bill-btn" onclick="openBillModal('${client.id}');event.stopPropagation();">
+           <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+           Facturar proyecciones
+         </button>` : ''}`;
+
+    sec.innerHTML = `
+      <div class="cli-section-head" onclick="toggleSec(this)">
+        <div class="cs-avatar">${inits}</div>
+        <div class="cs-info">
+          <div class="cs-name">${client.name}</div>
+          <div class="cs-rfc">${client.rfc || '—'} · ${client.paymentTerms || 30} días</div>
+        </div>
+        ${statsHtml}
+        <svg class="cs-chevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="cli-section-body">${renderBody(client, rows, isProspect)}</div>`;
+
+    container.appendChild(sec);
+  }
+
+  function renderBody(client, rows, isProspect) {
+    const cid = client.id;
+    const bankOpts = ['', ...BANKS].map(b => `<option value="${b}">${b || '— Sin banco —'}</option>`).join('');
+    const colCount = isProspect ? 5 : 7;
+
+    // Group rows by service, preserving date order within each group
+    let rowsHtml = '';
+    if (!rows.length) {
+      rowsHtml = `<tr><td colspan="${colCount}"><div class="empty-rows">Sin entradas para este período · usa "+ Agregar" para añadir</div></td></tr>`;
+    } else {
+      const groups = {};
+      const groupOrder = [];
+      rows.forEach(r => {
+        const key = r.service || '';
+        if (!groups[key]) { groups[key] = []; groupOrder.push(key); }
+        groups[key].push(r);
+      });
+      groupOrder.forEach(key => {
+        if (key) {
+          const safeKey = key.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+          const quoteBtn = isProspect
+            ? `<button class="svc-quote-btn" onclick="openServiceQuote('${cid}','${safeKey}');event.stopPropagation();" title="Cotizar sólo este servicio"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Cotizar ${key}</button>`
+            : '';
+          rowsHtml += `<tr class="svc-header-row"><td colspan="${colCount}"><div class="svc-header-inner"><span class="svc-label">${key}</span>${quoteBtn}</div></td></tr>`;
+        }
+        rowsHtml += groups[key].map(r => buildRowHtml(r, isProspect)).join('');
+      });
+    }
+
+    const thead = isProspect
+      ? `<th style="width:106px;">Fecha</th><th>Concepto</th><th class="r" style="width:128px;">Importe</th><th style="width:108px;">Estatus</th><th style="width:52px;"></th>`
+      : `<th style="width:106px;">Fecha</th><th>Concepto / Folio</th><th style="width:88px;">Tipo</th><th class="r" style="width:128px;">Importe</th><th style="width:108px;">Estatus</th><th style="width:124px;">Banco</th><th style="width:52px;"></th>`;
+
+    const typeCell = isProspect ? '' : `
+            <td style="width:88px;">
+              <div class="type-tog" id="ii-tog-${cid}">
+                <button class="t-fc" onclick="setType('${cid}','forecast')" id="ii-fc-${cid}">Forecast</button>
+                <button onclick="setType('${cid}','invoice')" id="ii-inv-${cid}">Factura</button>
+              </div>
+            </td>`;
+
+    const bankCell = isProspect ? '' : `
+            <td style="width:124px;"><select class="ii-sel" id="ii-bank-${cid}">${bankOpts}</select></td>`;
+
+    const serviceCell = `
+            <td style="width:130px;">
+              <select class="ii-sel" id="ii-service-${cid}" onchange="onServiceChange('${cid}')">${buildServiceOpts()}</select>
+              <div id="ii-service-add-${cid}" style="display:none;margin-top:4px;">
+                <input type="text" class="ii" id="ii-service-new-${cid}" placeholder="Nombre…" style="margin-bottom:3px;">
+                <button class="isave" style="padding:3px 8px;font-size:0.72rem;" onclick="confirmNewService('${cid}')">✓</button>
+              </div>
+            </td>`;
+
+    return `
+      <table class="flujo-table">
+        <thead><tr>${thead}</tr></thead>
+        <tbody id="tbody-${cid}">${rowsHtml}</tbody>
+      </table>
+      <table class="flujo-table" style="margin:0;">
+        <tbody>
+          <tr class="irow" id="irow-${cid}">
+            <td style="width:106px;"><input type="date" class="ii mono" id="ii-date-${cid}" value="${new Date().toISOString().slice(0, 10)}"></td>
+            <td><input type="text" class="ii" id="ii-concept-${cid}" placeholder="Concepto…"></td>
+            ${typeCell}
+            ${serviceCell}
+            <td class="r" style="width:128px;"><input type="number" class="ii mono" id="ii-amt-${cid}" placeholder="0.00" min="0" step="0.01" style="text-align:right;"></td>
+            <td style="width:108px;">
+              <select class="ii-sel" id="ii-status-${cid}">
+                <option value="pending">Pendiente</option>
+                <option value="paid">Pagada</option>
+              </select>
+            </td>
+            ${bankCell}
+            <td style="width:52px;">
+              <div style="display:flex;gap:4px;">
+                <button class="isave" onclick="saveRow('${cid}')">✓</button>
+                <button class="icancel" onclick="cancelRow('${cid}')">✕</button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <button class="add-trigger" onclick="openRow('${cid}')">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        ${isProspect ? 'Agregar forecast' : 'Agregar fila — forecast o factura'}
+      </button>
+      ${isProspect ? buildQuotesList(cid) : ''}`;
+  }
+
+  function buildQuotesList(cid) {
+    const quotes = (Store._db.quotes || []).filter(q => q.clientId === cid);
+    if (!quotes.length) return '';
+    const fmtDate = d => new Date(d + 'T12:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' });
+    const items = quotes.map(q => `
+      <div class="qg-item">
+        <div>
+          <div class="qg-folio">${q.folio}</div>
+          <div class="qg-date">${fmtDate(q.date)} · ${q.lines.length} línea${q.lines.length !== 1 ? 's' : ''}</div>
+        </div>
+        <div class="qg-total">${fmt.mxn(q.total)}</div>
+        <button class="qg-reprint" onclick="reprintQuote('${q.id}')">Re-imprimir</button>
+      </div>`).join('');
+    return `<div class="quotes-gen-section">
+      <div class="qg-head">Cotizaciones generadas · ${quotes.length}</div>
+      <div class="qg-list">${items}</div>
+    </div>`;
+  }
+
+  function buildRowHtml(r, isProspect) {
+    const isInv = r.rowType === 'invoice';
+    const typeBadge = isInv ? `<span class="tbadge tbadge-inv">Factura</span>` : `<span class="tbadge tbadge-fc">Forecast</span>`;
+    const statusBadge = isInv
+      ? `<span class="tbadge tbadge-${r.status}">${statusLabel(r.status)}</span>`
+      : r.status === 'paid' ? `<span class="tbadge tbadge-paid">Pagada</span>` : `<span class="tbadge tbadge-pending">Pendiente</span>`;
+    const conceptHtml = isInv
+      ? `<a href="factura-detalle.html?id=${r.id}" style="color:var(--ink);text-decoration:none;font-family:var(--mono);font-size:0.8rem;display:inline-flex;align-items:center;gap:5px;">${r.concept}<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.4"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>`
+      : `<span style="font-size:0.87rem;">${r.concept}</span>`;
+    const bankHtml = r.bank ? `<span class="bank-pill">${r.bank}</span>` : `<span style="color:var(--stone);font-family:var(--mono);font-size:0.73rem;">—</span>`;
+    const invActions = `<div class="row-acts">${r.status !== 'paid' ? `<button class="ract" onclick="quickPay('${r.id}')" title="Registrar pago"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></button>` : ''}</div>`;
+    const fcActions = `<div class="row-acts">${isProspect ? `<button class="ract" onclick="openSingleQuote('${r.id}');event.stopPropagation();" title="Cotizar este mes"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></button>` : ''}<button class="ract danger" onclick="deleteFc('${r.id}')" title="Eliminar"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg></button></div>`;
+    const amtCell = isInv
+      ? `<td class="r" style="font-family:var(--mono);font-weight:500;">${fmt.mxn(r.amount)}</td>`
+      : `<td class="r" id="amt-${r.id}" title="Doble clic para editar" ondblclick="inlineEditAmt('${r.id}',${r.amount})" style="cursor:text;font-family:var(--mono);font-weight:500;">${fmt.mxn(r.amount)}</td>`;
+
+    if (isProspect) {
+      return `<tr class="frow-forecast">
+        <td class="mono" style="white-space:nowrap;">${fmt.date(r.date)}</td>
+        <td>${conceptHtml}</td>
+        ${amtCell}
+        <td>${statusBadge}</td>
+        <td>${fcActions}</td>
+      </tr>`;
+    }
+    return `<tr class="frow-${r.rowType}">
+      <td class="mono" style="white-space:nowrap;">${fmt.date(r.date)}</td>
+      <td>${conceptHtml}</td>
+      <td>${typeBadge}</td>
+      ${amtCell}
+      <td>${statusBadge}</td>
+      <td>${bankHtml}</td>
+      <td>${isInv ? invActions : fcActions}</td>
+    </tr>`;
+  }
+
+  // ── Inline row ───────────────────────────────────────────────
+  window.toggleSec = head => head.closest('.cli-section').classList.toggle('open');
+
+  window.openRow = (cid) => {
+    const row = document.getElementById('irow-' + cid);
+    row.classList.add('show');
+    const client = Store.find('clients', cid);
+    const isProspect = client && client.status === 'prospect';
+    currentAddType[cid] = 'forecast';
+    if (!isProspect) setType(cid, 'forecast');
+    document.getElementById('ii-date-' + cid).value = new Date().toISOString().slice(0, 10);
+    document.getElementById('ii-amt-' + cid).value = '';
+    document.getElementById('ii-concept-' + cid).value = '';
+    document.getElementById('ii-status-' + cid).value = 'pending';
+    const bankEl = document.getElementById('ii-bank-' + cid);
+    if (bankEl) bankEl.value = '';
+    const svcEl = document.getElementById('ii-service-' + cid);
+    if (svcEl) { svcEl.innerHTML = buildServiceOpts(); svcEl.value = ''; }
+    const svcAdd = document.getElementById('ii-service-add-' + cid);
+    if (svcAdd) svcAdd.style.display = 'none';
+    document.getElementById('ii-concept-' + cid).focus();
+    row.querySelectorAll('input, select').forEach(el => {
+      el.onkeydown = e => { if (e.key === 'Enter') saveRow(cid); if (e.key === 'Escape') cancelRow(cid); };
+    });
+  };
+
+  window.cancelRow = (cid) => document.getElementById('irow-' + cid).classList.remove('show');
+
+  window.setType = (cid, type) => {
+    currentAddType[cid] = type;
+    const fc = document.getElementById('ii-fc-' + cid);
+    const inv = document.getElementById('ii-inv-' + cid);
+    if (fc) fc.className = type === 'forecast' ? 't-fc' : '';
+    if (inv) inv.className = type === 'invoice' ? 't-inv' : '';
+  };
+
+  window.saveRow = (cid) => {
+    const concept = document.getElementById('ii-concept-' + cid).value.trim();
+    const amount = +document.getElementById('ii-amt-' + cid).value;
+    const date = document.getElementById('ii-date-' + cid).value;
+    const status = document.getElementById('ii-status-' + cid).value;
+    const bankEl = document.getElementById('ii-bank-' + cid);
+    const bank = bankEl ? bankEl.value || null : null;
+    const client = Store.find('clients', cid);
+    const isProspect = client && client.status === 'prospect';
+    const type = isProspect ? 'forecast' : (currentAddType[cid] || 'forecast');
+
+    if (!concept) { toast('Escribe un concepto', 'error'); document.getElementById('ii-concept-' + cid).focus(); return; }
+    if (!amount || amount <= 0) { toast('Ingresa un importe mayor a cero', 'error'); return; }
+    if (!date) { toast('Selecciona una fecha', 'error'); return; }
+
+    let service = null;
+    const svcEl = document.getElementById('ii-service-' + cid);
+    if (svcEl) {
+      if (svcEl.value === '__add__') {
+        const newSvcEl = document.getElementById('ii-service-new-' + cid);
+        if (newSvcEl && newSvcEl.value.trim()) { addService(newSvcEl.value.trim()); service = newSvcEl.value.trim(); }
+      } else { service = svcEl.value || null; }
+    }
+
+    if (type === 'forecast') {
+      Store.add('forecasts', { clientId: cid, date, concept, amount, status, bank, notes: '', service });
+      toast('Proyección agregada');
+    } else {
+      const folio = nextFolioForClient(cid);
+      const base = +(amount / 1.16).toFixed(2);
+      const iva = +(amount - base).toFixed(2);
+      Store.add('invoices', {
+        folio, type: 'emitted', clientId: cid, service,
+        issueDate: date, dueDate: addDays(date, client.paymentTerms || 30),
+        status: status === 'paid' ? 'paid' : 'pending',
+        subtotal: base, iva, total: +amount.toFixed(2),
+        cfdiUse: 'G03', metodoPago: 'PPD', formaPago: '99',
+        items: [{ description: concept, qty: 1, unit: 'E48', unitPrice: base, discount: 0, total: base }],
+        notes: ''
+      });
+      if (status === 'paid') {
+        const invs = Store.all('invoices');
+        const newInv = invs[invs.length - 1];
+        Store.add('payments', { invoiceId: newInv.id, date, amount: +amount.toFixed(2), method: 'Manual', reference: 'MANUAL-' + Date.now(), bank: bank || 'N/A' });
+      }
+      toast(`Factura ${folio} creada`);
+    }
+    cancelRow(cid);
+    render();
+  };
+
+  // ── Quick pay ────────────────────────────────────────────────
+  window.quickPay = (invId) => {
+    const inv = Store.find('invoices', invId);
+    if (!inv || inv.status === 'paid') { toast('Esta factura ya está pagada', 'error'); return; }
+    const bankOpts = ['', ...BANKS].map(b => `<option value="${b}">${b || '— Sin banco —'}</option>`).join('');
+    Modal.open(`
+      <div class="modal-head">
+        <div><h3>Registrar pago</h3><div class="sub">Factura ${inv.folio} · ${fmt.mxn(inv.total)}</div></div>
+        <button class="modal-close" onclick="Jobby.Modal.close()">✕</button>
+      </div>
+      <div class="form-row">
+        <div class="form-field"><label>Fecha de cobro</label><input type="date" id="qp-date" value="${new Date().toISOString().slice(0, 10)}"></div>
+        <div class="form-field"><label>Banco que recibió</label><select id="qp-bank">${bankOpts}</select></div>
+      </div>
+      <div class="form-row">
+        <div class="form-field"><label>Referencia</label><input type="text" id="qp-ref" placeholder="SPEI-XXXXXXXX…"></div>
+        <div class="form-field"><label>Monto MXN</label><input type="number" id="qp-amt" value="${inv.total}" step="0.01"></div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-ghost btn-sm" onclick="Jobby.Modal.close()">Cancelar</button>
+        <button class="btn btn-primary btn-sm" onclick="confirmPay('${invId}')">Confirmar pago</button>
+      </div>`, { width: '460px' });
+  };
+
+  window.confirmPay = (invId) => {
+    const inv = Store.find('invoices', invId);
+    Store.update('invoices', invId, { status: 'paid' });
+    Store.add('payments', {
+      invoiceId: invId,
+      date: document.getElementById('qp-date').value,
+      amount: +document.getElementById('qp-amt').value,
+      method: 'Manual',
+      reference: document.getElementById('qp-ref').value.trim() || ('MANUAL-' + Date.now()),
+      bank: document.getElementById('qp-bank').value || 'N/A'
+    });
+    Store.logActivity('Marcó como pagada', inv.folio);
+    Modal.close();
+    toast(`${inv.folio} registrada como pagada`);
+    render();
+  };
+
+  // ── Edit / delete forecast ───────────────────────────────────
+  window.editFc = (fcId) => {
+    const fc = Store.find('forecasts', fcId);
+    const client = fc.clientId ? Store.find('clients', fc.clientId) : null;
+    const isProspect = client && client.status === 'prospect';
+    const bankOpts = ['', ...BANKS].map(b => `<option value="${b}" ${(fc.bank || '') === b ? 'selected' : ''}>${b || '— Sin banco —'}</option>`).join('');
+    Modal.open(`
+      <div class="modal-head">
+        <div><h3>Editar proyección</h3><div class="sub">${client?.name || ''}</div></div>
+        <button class="modal-close" onclick="Jobby.Modal.close()">✕</button>
+      </div>
+      <div class="form-row">
+        <div class="form-field"><label>Fecha</label><input type="date" id="efc-date" value="${fc.date}"></div>
+        <div class="form-field"><label>Importe MXN</label><input type="number" id="efc-amt" value="${fc.amount}" step="0.01"></div>
+      </div>
+      <div class="form-row full">
+        <div class="form-field"><label>Concepto</label><input type="text" id="efc-concept" value="${fc.concept}"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-field"><label>Estatus</label>
+          <select id="efc-status">
+            <option value="pending" ${fc.status === 'pending' ? 'selected' : ''}>Pendiente</option>
+            <option value="paid" ${fc.status === 'paid' ? 'selected' : ''}>Pagada</option>
+            <option value="cancelled" ${fc.status === 'cancelled' ? 'selected' : ''}>Cancelada</option>
+          </select>
+        </div>
+        ${!isProspect ? `<div class="form-field"><label>Banco</label><select id="efc-bank">${bankOpts}</select></div>` : ''}
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-ghost btn-sm" style="color:var(--danger);margin-right:auto;" onclick="deleteFc('${fcId}',true)">Eliminar</button>
+        <button class="btn btn-ghost btn-sm" onclick="Jobby.Modal.close()">Cancelar</button>
+        <button class="btn btn-primary btn-sm" onclick="saveFcEdit('${fcId}')">Guardar</button>
+      </div>`, { width: '480px' });
+  };
+
+  window.saveFcEdit = (fcId) => {
+    const concept = document.getElementById('efc-concept').value.trim();
+    const amount = +document.getElementById('efc-amt').value;
+    if (!concept || !amount) { toast('Completa todos los campos', 'error'); return; }
+    const bankEl = document.getElementById('efc-bank');
+    Store.update('forecasts', fcId, {
+      date: document.getElementById('efc-date').value,
+      concept, amount,
+      status: document.getElementById('efc-status').value,
+      bank: bankEl ? bankEl.value || null : null
+    });
+    Modal.close(); toast('Proyección actualizada'); render();
+  };
+
+  window.deleteFc = (fcId, fromModal) => {
+    if (confirm('¿Eliminar esta proyección?')) {
+      Store.remove('forecasts', fcId);
+      if (fromModal) Modal.close();
+      toast('Proyección eliminada', 'error');
+      render();
+    }
+  };
+
+  // ── Inline amount edit (double-click) ────────────────────────
+  window.inlineEditAmt = (fcId, currentAmt) => {
+    const td = document.getElementById('amt-' + fcId);
+    if (!td || td.querySelector('input')) return;
+    td.innerHTML = `<input type="number" id="amtedit-${fcId}" value="${currentAmt}" step="0.01" min="0"
+      style="width:90px;text-align:right;font-family:var(--mono);font-size:0.85rem;
+             border:1.5px solid var(--ink);border-radius:4px;padding:3px 6px;outline:none;background:var(--paper);">`;
+    const input = document.getElementById('amtedit-' + fcId);
+    input.focus(); input.select();
+    const save = () => {
+      const val = +input.value;
+      if (val > 0 && val !== currentAmt) {
+        Store.update('forecasts', fcId, { amount: val });
+        toast('Monto actualizado');
+        render();
+      } else {
+        td.innerHTML = fmt.mxn(currentAmt);
+        td.ondblclick = () => inlineEditAmt(fcId, currentAmt);
+      }
+    };
+    input.addEventListener('blur', save);
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); input.removeEventListener('blur', save); save(); }
+      if (e.key === 'Escape') { td.innerHTML = fmt.mxn(currentAmt); td.ondblclick = () => inlineEditAmt(fcId, currentAmt); }
+    });
+  };
+
+  // ── Promote prospect to client ───────────────────────────────
+  window.promoteToClient = (id) => {
+    const c = Store.find('clients', id);
+    Modal.open(`
+      <div class="modal-head">
+        <div><h3>Convertir en cliente</h3><div class="sub">${c.name}</div></div>
+        <button class="modal-close" onclick="Jobby.Modal.close()">✕</button>
+      </div>
+      <p style="font-size:0.82rem;color:var(--stone);font-family:var(--mono);margin-bottom:16px;">Completa los datos para formalizar este prospecto. Sus líneas de forecast se conservarán.</p>
+      <div class="form-row">
+        <div class="form-field"><label>RFC</label><input type="text" id="pr-rfc" value="${c.rfc || ''}" placeholder="RFC000101ABC" maxlength="13" style="text-transform:uppercase;"></div>
+        <div class="form-field"><label>Email</label><input type="email" id="pr-email" value="${c.email || ''}"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-field"><label>Teléfono</label><input type="text" id="pr-phone" value="${c.phone || ''}"></div>
+        <div class="form-field"><label>Días de crédito</label><input type="number" id="pr-terms" value="${c.paymentTerms || 30}"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-field"><label>Límite de crédito MXN</label><input type="number" id="pr-credit" value="${c.creditLimit || 100000}"></div>
+        <div class="form-field"><label>Dirección</label><input type="text" id="pr-address" value="${c.address || ''}"></div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-ghost btn-sm" onclick="Jobby.Modal.close()">Cancelar</button>
+        <button class="btn btn-primary btn-sm" onclick="confirmPromote('${id}')">Convertir en cliente</button>
+      </div>`, { width: '480px' });
+  };
+
+  window.confirmPromote = (id) => {
+    Store.update('clients', id, {
+      status: 'active',
+      rfc: document.getElementById('pr-rfc').value.trim().toUpperCase(),
+      email: document.getElementById('pr-email').value.trim(),
+      phone: document.getElementById('pr-phone').value.trim(),
+      address: document.getElementById('pr-address').value.trim(),
+      paymentTerms: +document.getElementById('pr-terms').value || 30,
+      creditLimit: +document.getElementById('pr-credit').value || 100000
+    });
+    Modal.close();
+    toast('Prospecto convertido a cliente activo');
+    refreshClientFilter();
+    render();
+  };
+
+  // ── Prospect form ────────────────────────────────────────────
+  window.openProspectForm = () => {
+    pfSelectedClientId = null;
+    document.getElementById('pfNameDropdown').style.display = 'none';
+    document.getElementById('pfService').innerHTML = buildServiceOpts();
+    document.getElementById('pfServiceAdd').style.display = 'none';
+    document.getElementById('prospectBtn').style.display = 'none';
+    document.getElementById('prospectForm').classList.add('show');
+    document.getElementById('pfName').focus();
+  };
+  window.closeProspectForm = () => {
+    pfSelectedClientId = null;
+    document.getElementById('prospectBtn').style.display = '';
+    document.getElementById('prospectForm').classList.remove('show');
+  };
+  window.saveProspect = () => {
+    const name = document.getElementById('pfName').value.trim();
+    const months = Math.max(1, Math.min(24, +document.getElementById('pfMonths').value || 3));
+    const amount = +document.getElementById('pfAmount').value;
+    if (!name) { toast('Ingresa el nombre del cliente potencial', 'error'); document.getElementById('pfName').focus(); return; }
+    if (!amount || amount <= 0) { toast('Ingresa un monto estimado mayor a cero', 'error'); document.getElementById('pfAmount').focus(); return; }
+
+    let svcVal = document.getElementById('pfService').value;
+    if (svcVal === '__add__') {
+      const newSvc = document.getElementById('pfServiceNew').value.trim();
+      if (newSvc) { addService(newSvc); svcVal = newSvc; } else { svcVal = null; }
+    }
+    const service = svcVal || null;
+
+    let targetId;
+    if (pfSelectedClientId && Store.find('clients', pfSelectedClientId)) {
+      targetId = pfSelectedClientId;
+    } else {
+      Store.add('clients', { name, rfc: '', email: '', phone: '', address: '', paymentTerms: 30, creditLimit: 0, notes: '', status: 'prospect' });
+      const allClients = Store.all('clients');
+      targetId = allClients[allClients.length - 1].id;
+    }
+    sessionCreatedIds.add(targetId);
+
+    const now = new Date();
+    for (let i = 0; i < months; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+      const dateStr = d.toISOString().slice(0, 10).slice(0, 7) + '-01';
+      const monthLabel = d.toLocaleDateString('es-MX', { month: 'long', year: 'numeric' });
+      const concept = service ? `${service} - ${monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1)}` : `Proyección estimada · ${monthLabel}`;
+      Store.add('forecasts', { clientId: targetId, date: dateStr, concept, amount, status: 'pending', bank: null, notes: '', service });
+    }
+
+    Store.logActivity('Creó proyección', name);
+    document.getElementById('pfName').value = '';
+    document.getElementById('pfMonths').value = 3;
+    document.getElementById('pfAmount').value = '';
+    pfSelectedClientId = null;
+    refreshClientFilter();
+    closeProspectForm();
+    toast(`Proyección creada · ${months} mes${months > 1 ? 'es' : ''} proyectado${months > 1 ? 's' : ''}`);
+    render();
+  };
+
+  // ── Quote modal ──────────────────────────────────────────────
+  function openQuoteModalFiltered(prospectId, filter) {
+    const client = Store.find('clients', prospectId);
+    const allForecasts = Store.all('forecasts').filter(f => f.clientId === prospectId);
+    let forecasts = allForecasts;
+    if (filter && filter.service !== undefined) forecasts = allForecasts.filter(f => (f.service || '') === filter.service);
+    if (filter && filter.fcId) forecasts = allForecasts.filter(f => f.id === filter.fcId);
+    if (!forecasts.length) { toast('Sin líneas de forecast para cotizar', 'error'); return; }
+
+    const cotNum = String(Store.all('clients').filter(c => c.status === 'prospect').findIndex(c => c.id === prospectId) + 1).padStart(3, '0');
+    const today = new Date().toISOString().slice(0, 10);
+
+    // Group by service for display
+    const groups = {};
+    const groupOrder = [];
+    forecasts.forEach(f => {
+      const k = f.service || '';
+      if (!groups[k]) { groups[k] = []; groupOrder.push(k); }
+      groups[k].push(f);
+    });
+    const showHeaders = groupOrder.length > 1 || (groupOrder.length === 1 && groupOrder[0]);
+
+    let fcRows = '';
+    groupOrder.forEach(k => {
+      if (showHeaders && k) fcRows += `<div class="qm-svc-head">${k}</div>`;
+      groups[k].forEach(f => {
+        fcRows += `<div class="qm-fc-item">
+          <input type="checkbox" class="qf-fc-check" value="${f.id}" checked>
+          <input type="text" class="qfc-concept-input qf-fc-concept" data-fcid="${f.id}" value="${f.concept.replace(/"/g,'&quot;')}">
+          <input type="number" class="qfc-amt-input qf-fc-amt" data-fcid="${f.id}" value="${f.amount}" min="0" step="0.01">
+        </div>`;
+      });
+    });
+
+    const subtitle = filter && filter.service ? `${client.name} · ${filter.service}` : client.name;
+    Modal.open(`
+      <div class="modal-head">
+        <div><h3>Cotización rápida</h3><div class="sub">${subtitle}</div></div>
+        <button class="modal-close" onclick="Jobby.Modal.close()">✕</button>
+      </div>
+      <div class="form-row">
+        <div class="form-field"><label>Folio</label><input type="text" id="qf-folio" value="COT-${cotNum}"></div>
+        <div class="form-field"><label>Fecha</label><input type="date" id="qf-date" value="${today}"></div>
+      </div>
+      <div class="form-row full">
+        <div class="form-field"><label>Descripción del servicio</label>
+          <textarea id="qf-desc" rows="3" style="width:100%;border:1px solid var(--line);border-radius:6px;padding:8px 11px;font-family:var(--sans);font-size:0.84rem;color:var(--ink);background:var(--paper);outline:none;resize:vertical;box-sizing:border-box;" placeholder="Describe el servicio a prestar…"></textarea>
+        </div>
+      </div>
+      <div style="font-family:var(--mono);font-size:0.67rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--stone);margin:14px 0 6px;">Líneas a incluir</div>
+      <div class="qm-fc-list">${fcRows}</div>
+      <div class="qm-totals">
+        <div class="qm-total-row">
+          <span class="qt-label">Subtotal</span>
+          <span class="qt-sub" id="qm-subtotal-val">${fmt.mxn(forecasts.reduce((s, f) => s + f.amount, 0))}</span>
+        </div>
+        <div class="qm-total-row" id="qm-iva-row">
+          <span class="qt-label">IVA (16%)</span>
+          <span class="qt-sub" id="qm-iva-val">${fmt.mxn(+(forecasts.reduce((s, f) => s + f.amount, 0) * 0.16).toFixed(2))}</span>
+        </div>
+        <div class="qm-total-row grand">
+          <span class="qt-label">Total</span>
+          <span class="qt-val" id="qm-total-val">${fmt.mxn(+(forecasts.reduce((s, f) => s + f.amount, 0) * 1.16).toFixed(2))}</span>
+        </div>
+        <label class="qm-iva-toggle">
+          <input type="checkbox" id="qf-iva" checked> Aplicar IVA (16%) — desactiva si el cliente no es contribuyente de IVA
+        </label>
+      </div>
+      <div class="modal-foot" style="margin-top:14px;">
+        <button class="btn btn-ghost btn-sm" onclick="Jobby.Modal.close()">Cancelar</button>
+        <button class="btn btn-primary btn-sm" onclick="downloadQuote('${prospectId}')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="vertical-align:-2px;margin-right:4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Descargar cotización
+        </button>
+      </div>`, { width: '520px' });
+
+    // Live total update (re-reads amount inputs and IVA toggle on every change)
+    const recalcTotal = () => {
+      const checkedIds = new Set([...document.querySelectorAll('.qf-fc-check:checked')].map(c => c.value));
+      let subtotal = 0;
+      document.querySelectorAll('.qf-fc-amt').forEach(inp => {
+        if (checkedIds.has(inp.dataset.fcid)) subtotal += (+inp.value || 0);
+      });
+      const applyIva = document.getElementById('qf-iva').checked;
+      const iva = applyIva ? +(subtotal * 0.16).toFixed(2) : 0;
+      const total = +(subtotal + iva).toFixed(2);
+      document.getElementById('qm-subtotal-val').textContent = fmt.mxn(subtotal);
+      document.getElementById('qm-iva-val').textContent = fmt.mxn(iva);
+      document.getElementById('qm-iva-row').style.opacity = applyIva ? '1' : '0.35';
+      document.getElementById('qm-total-val').textContent = fmt.mxn(total);
+    };
+    document.querySelectorAll('.qf-fc-check').forEach(cb => cb.addEventListener('change', recalcTotal));
+    document.querySelectorAll('.qf-fc-amt').forEach(inp => inp.addEventListener('input', recalcTotal));
+    document.getElementById('qf-iva').addEventListener('change', recalcTotal);
+  }
+
+  window.openQuoteModal = (prospectId) => openQuoteModalFiltered(prospectId, null);
+  window.openServiceQuote = (prospectId, service) => openQuoteModalFiltered(prospectId, { service });
+  window.openSingleQuote = (fcId) => {
+    const fc = Store.find('forecasts', fcId);
+    if (!fc) return;
+    openQuoteModalFiltered(fc.clientId, { fcId });
+  };
+
+  window.downloadQuote = (prospectId) => {
+    const client = Store.find('clients', prospectId);
+    const folio = document.getElementById('qf-folio').value.trim() || 'COT-001';
+    const date = document.getElementById('qf-date').value;
+    const desc = document.getElementById('qf-desc').value.trim();
+    const selectedIds = [...document.querySelectorAll('.qf-fc-check:checked')].map(c => c.value);
+    if (!selectedIds.length) { toast('Selecciona al menos una línea', 'error'); return; }
+
+    // Read edited concepts and amounts, update forecasts in store
+    const editedConcepts = {};
+    document.querySelectorAll('.qf-fc-concept').forEach(inp => {
+      editedConcepts[inp.dataset.fcid] = inp.value.trim() || inp.dataset.fcid;
+    });
+    const editedAmounts = {};
+    document.querySelectorAll('.qf-fc-amt').forEach(inp => {
+      const val = +inp.value;
+      if (val > 0) editedAmounts[inp.dataset.fcid] = val;
+    });
+    Object.entries(editedConcepts).forEach(([fcId, concept]) => {
+      const upd = { concept };
+      if (editedAmounts[fcId]) upd.amount = editedAmounts[fcId];
+      Store.update('forecasts', fcId, upd);
+    });
+
+    const allForecasts = Store.all('forecasts').filter(f => f.clientId === prospectId);
+    const selected = allForecasts.filter(f => selectedIds.includes(f.id))
+      .map(f => ({ ...f, concept: editedConcepts[f.id] || f.concept, amount: editedAmounts[f.id] || f.amount }));
+
+    const applyIva = document.getElementById('qf-iva').checked;
+    const subtotal = selected.reduce((s, f) => s + f.amount, 0);
+    const iva = applyIva ? +(subtotal * 0.16).toFixed(2) : 0;
+    const total = +(subtotal + iva).toFixed(2);
+
+    // Save quote record
+    if (!Store._db.quotes) Store._db.quotes = [];
+    Store._db.quotes.push({
+      id: 'cot-' + Date.now(), clientId: prospectId, folio, date, description: desc, total, applyIva,
+      lines: selected.map(f => ({ fcId: f.id, concept: f.concept, amount: f.amount, date: f.date })),
+      createdAt: new Date().toISOString()
+    });
+    Store.save();
+
+    printQuoteHtml(client, Store.company, folio, date, desc, selected, subtotal, iva, total);
+    Modal.close();
+    render();
+  };
+
+  function printQuoteHtml(client, company, folio, date, desc, lines, subtotal, iva, total) {
+    const fmtMXN = n => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(n);
+    const fmtDate = d => new Date(d + 'T12:00:00').toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
+    const rows = lines.map(f => `
+      <tr>
+        <td style="padding:10px 14px;border-bottom:1px solid #E8E0CC;font-size:14px;">${f.concept}</td>
+        <td style="padding:10px 14px;border-bottom:1px solid #E8E0CC;font-size:14px;">${fmtDate(f.date)}</td>
+        <td style="padding:10px 14px;border-bottom:1px solid #E8E0CC;text-align:right;font-family:monospace;font-size:14px;">${fmtMXN(f.amount)}</td>
+      </tr>`).join('');
+    const html = `<!DOCTYPE html><html lang="es-MX"><head><meta charset="UTF-8"><title>Cotización ${folio}</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Helvetica Neue',Arial,sans-serif;color:#1A2E1F;background:#fff;padding:48px;max-width:760px;margin:0 auto}
+  h1{font-size:28px;letter-spacing:.08em;color:#0F5132;font-weight:700}
+  .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:40px;padding-bottom:24px;border-bottom:2px solid #0F5132}
+  .company-name{font-size:20px;font-weight:700;color:#1A2E1F;margin-bottom:4px}
+  .company-meta{font-size:12px;color:#6B6B5E;line-height:1.7}
+  .meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:32px}
+  .meta-block .label{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:#6B6B5E;margin-bottom:3px}
+  .meta-block .value{font-size:14px;color:#1A2E1F;font-weight:500}
+  .desc-block{background:#F9F6EE;border-left:3px solid #C9A227;padding:14px 18px;border-radius:4px;margin-bottom:28px;font-size:14px;line-height:1.6;color:#3A3A2A}
+  table{width:100%;border-collapse:collapse;margin-bottom:20px}
+  thead tr{background:#0F5132}
+  thead th{padding:11px 14px;text-align:left;color:#F4EFE4;font-size:11px;text-transform:uppercase;letter-spacing:.08em}
+  thead th:last-child{text-align:right}
+  tbody tr:nth-child(even){background:#F9F6EE}
+  .totals{margin-left:auto;width:260px}
+  .totals tr td{padding:7px 14px;font-size:14px}
+  .totals tr td:first-child{color:#6B6B5E}
+  .totals tr td:last-child{text-align:right;font-family:monospace}
+  .totals tr.grand td{font-weight:700;font-size:17px;border-top:2px solid #0F5132;padding-top:10px;color:#0F5132}
+  .footer{margin-top:48px;padding-top:18px;border-top:1px solid #E8E0CC;font-size:11px;color:#9A9A8A;text-align:center}
+  @media print{body{padding:24px}}
+</style></head><body>
+<div class="header">
+  <div><div class="company-name">${company.name}</div><div class="company-meta">RFC: ${company.rfc}<br>${company.address||''}<br>${company.phone||''}</div></div>
+  <div style="text-align:right"><h1>COTIZACIÓN</h1><div style="font-size:13px;color:#6B6B5E;margin-top:4px">${folio}</div></div>
+</div>
+<div class="meta-grid">
+  <div class="meta-block"><div class="label">Fecha</div><div class="value">${fmtDate(date)}</div></div>
+  <div class="meta-block"><div class="label">Cliente</div><div class="value">${client.name}</div></div>
+  <div class="meta-block"><div class="label">Folio</div><div class="value">${folio}</div></div>
+  <div class="meta-block"><div class="label">Vigencia</div><div class="value">30 días naturales</div></div>
+</div>
+${desc?`<div class="desc-block"><strong>Descripción del servicio:</strong><br>${desc.replace(/\n/g,'<br>')}</div>`:''}
+<table><thead><tr><th>Concepto</th><th>Periodo estimado</th><th style="text-align:right">Importe</th></tr></thead><tbody>${rows}</tbody></table>
+<table class="totals">
+  <tr><td>Subtotal</td><td>${fmtMXN(subtotal)}</td></tr>
+  ${iva > 0 ? `<tr><td>IVA (16%)</td><td>${fmtMXN(iva)}</td></tr>` : ''}
+  <tr class="grand"><td>Total</td><td>${fmtMXN(total)}</td></tr>
+</table>
+<div class="footer">Este documento es una cotización estimada y no representa un comprobante fiscal. · ${company.name} · RFC ${company.rfc}</div>
+</body></html>`;
+    const win = window.open('', '_blank');
+    win.document.write(html);
+    win.document.close();
+    win.focus();
+    setTimeout(() => win.print(), 400);
+  }
+
+  window.reprintQuote = (quoteId) => {
+    const q = (Store._db.quotes || []).find(q => q.id === quoteId);
+    if (!q) { toast('Cotización no encontrada', 'error'); return; }
+    const client = Store.find('clients', q.clientId);
+    const subtotal = q.lines.reduce((s, l) => s + l.amount, 0);
+    const iva = q.applyIva !== false ? +(subtotal * 0.16).toFixed(2) : 0;
+    printQuoteHtml(client, Store.company, q.folio, q.date, q.description, q.lines, subtotal, iva, q.total);
+  };
+
+  // ── Bill forecasts (active clients) ─────────────────────────
+  window.openBillModal = (clientId) => {
+    const client = Store.find('clients', clientId);
+    const forecasts = Store.all('forecasts').filter(f => f.clientId === clientId && f.status !== 'paid');
+    if (!forecasts.length) { toast('Sin proyecciones pendientes para facturar', 'error'); return; }
+
+    const folio = nextFolioForClient(clientId);
+    const today = new Date().toISOString().slice(0, 10);
+    const dueDate = addDays(today, client.paymentTerms || 30);
+
+    // Group forecasts by service
+    const groups = {};
+    const groupOrder = [];
+    forecasts.forEach(f => {
+      const k = f.service || '';
+      if (!groups[k]) { groups[k] = []; groupOrder.push(k); }
+      groups[k].push(f);
+    });
+
+    let svcRows = '';
+    groupOrder.forEach(k => {
+      const svcSubtotal = groups[k].reduce((s, f) => s + f.amount, 0);
+      const safeK = k.replace(/"/g, '&quot;');
+      svcRows += `
+        <div class="bill-svc-head">
+          <label class="bill-svc-label">
+            <input type="checkbox" class="bill-svc-check" data-svc="${safeK}" checked>
+            ${k || 'Sin servicio'}
+          </label>
+          <span class="bill-svc-amt">${fmt.mxn(svcSubtotal)}</span>
+        </div>
+        <div class="bill-fc-list" data-svc-list="${safeK}">
+          ${groups[k].map(f => `
+          <label class="bill-fc-item">
+            <input type="checkbox" class="bill-fc-check" value="${f.id}" data-svc="${safeK}" checked>
+            <span class="bill-fc-concept">${f.concept}</span>
+            <span class="bill-fc-amt">${fmt.mxn(f.amount)}</span>
+          </label>`).join('')}
+        </div>`;
+    });
+
+    const initSubtotal = forecasts.reduce((s, f) => s + f.amount, 0);
+    const initIva = +(initSubtotal * 0.16).toFixed(2);
+
+    Modal.open(`
+      <div class="modal-head">
+        <div><h3>Facturar proyecciones</h3><div class="sub">${client.name}</div></div>
+        <button class="modal-close" onclick="Jobby.Modal.close()">✕</button>
+      </div>
+      <div class="form-row">
+        <div class="form-field"><label>Folio</label><input type="text" id="bf-folio" value="${folio}"></div>
+        <div class="form-field"><label>Fecha emisión</label><input type="date" id="bf-date" value="${today}"></div>
+        <div class="form-field"><label>Fecha vencimiento</label><input type="date" id="bf-due" value="${dueDate}"></div>
+      </div>
+      <div style="font-family:var(--mono);font-size:0.67rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--stone);margin:14px 0 6px;display:flex;align-items:center;justify-content:space-between;">
+        <span>Proyecciones a facturar</span>
+        <label class="bill-select-all" style="margin:0;text-transform:none;letter-spacing:0;">
+          <input type="checkbox" id="bf-select-all" checked> Seleccionar todo
+        </label>
+      </div>
+      <div id="bf-svc-rows" style="max-height:280px;overflow-y:auto;">${svcRows}</div>
+      <div class="qm-totals" style="margin-top:12px;">
+        <div class="qm-total-row">
+          <span class="qt-label">Subtotal</span>
+          <span class="qt-sub" id="bf-subtotal">${fmt.mxn(initSubtotal)}</span>
+        </div>
+        <div class="qm-total-row" id="bf-iva-row">
+          <span class="qt-label">IVA (16%)</span>
+          <span class="qt-sub" id="bf-iva-val">${fmt.mxn(initIva)}</span>
+        </div>
+        <div class="qm-total-row grand">
+          <span class="qt-label">Total</span>
+          <span class="qt-val" id="bf-total">${fmt.mxn(+(initSubtotal + initIva).toFixed(2))}</span>
+        </div>
+        <label class="qm-iva-toggle">
+          <input type="checkbox" id="bf-iva-check" checked> Aplicar IVA (16%)
+        </label>
+      </div>
+      <div class="modal-foot" style="margin-top:16px;">
+        <button class="btn btn-ghost btn-sm" onclick="Jobby.Modal.close()">Cancelar</button>
+        <button class="btn btn-primary btn-sm" onclick="confirmBill('${clientId}')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="vertical-align:-2px;margin-right:4px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="7" x2="15" y2="7"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="17" x2="13" y2="17"/></svg>
+          Crear factura
+        </button>
+      </div>`, { width: '540px' });
+
+    // Recalc total
+    const recalc = () => {
+      const checkedIds = new Set([...document.querySelectorAll('.bill-fc-check:checked')].map(c => c.value));
+      const subtotal = forecasts.filter(f => checkedIds.has(f.id)).reduce((s, f) => s + f.amount, 0);
+      const applyIva = document.getElementById('bf-iva-check').checked;
+      const iva = applyIva ? +(subtotal * 0.16).toFixed(2) : 0;
+      document.getElementById('bf-subtotal').textContent = fmt.mxn(subtotal);
+      document.getElementById('bf-iva-val').textContent = fmt.mxn(iva);
+      document.getElementById('bf-iva-row').style.opacity = applyIva ? '1' : '0.35';
+      document.getElementById('bf-total').textContent = fmt.mxn(+(subtotal + iva).toFixed(2));
+    };
+
+    // Service group toggle — checks/unchecks all items in that group
+    document.querySelectorAll('.bill-svc-check').forEach(svcCb => {
+      svcCb.addEventListener('change', () => {
+        document.querySelectorAll(`.bill-fc-check[data-svc="${svcCb.dataset.svc}"]`)
+          .forEach(cb => { cb.checked = svcCb.checked; });
+        syncSelectAll();
+        recalc();
+      });
+    });
+
+    // Individual row toggle — syncs service group checkbox state
+    document.querySelectorAll('.bill-fc-check').forEach(cb => {
+      cb.addEventListener('change', () => {
+        const svc = cb.dataset.svc;
+        const all = [...document.querySelectorAll(`.bill-fc-check[data-svc="${svc}"]`)];
+        const svcCb = document.querySelector(`.bill-svc-check[data-svc="${svc}"]`);
+        if (svcCb) svcCb.checked = all.every(c => c.checked);
+        syncSelectAll();
+        recalc();
+      });
+    });
+
+    // Select all toggle
+    const syncSelectAll = () => {
+      const all = [...document.querySelectorAll('.bill-fc-check')];
+      document.getElementById('bf-select-all').checked = all.every(c => c.checked);
+    };
+    document.getElementById('bf-select-all').addEventListener('change', function () {
+      document.querySelectorAll('.bill-fc-check').forEach(cb => { cb.checked = this.checked; });
+      document.querySelectorAll('.bill-svc-check').forEach(cb => { cb.checked = this.checked; });
+      recalc();
+    });
+
+    document.getElementById('bf-iva-check').addEventListener('change', recalc);
+  };
+
+  window.confirmBill = (clientId) => {
+    const client = Store.find('clients', clientId);
+    const selectedIds = [...document.querySelectorAll('.bill-fc-check:checked')].map(c => c.value);
+    if (!selectedIds.length) { toast('Selecciona al menos una proyección', 'error'); return; }
+
+    const folio = document.getElementById('bf-folio').value.trim();
+    const issueDate = document.getElementById('bf-date').value;
+    const dueDate = document.getElementById('bf-due').value;
+    const applyIva = document.getElementById('bf-iva-check').checked;
+
+    if (!folio || !issueDate || !dueDate) { toast('Completa los datos de la factura', 'error'); return; }
+
+    const selectedForecasts = Store.all('forecasts').filter(f => selectedIds.includes(f.id));
+    const subtotal = +selectedForecasts.reduce((s, f) => s + f.amount, 0).toFixed(2);
+    const iva = applyIva ? +(subtotal * 0.16).toFixed(2) : 0;
+    const total = +(subtotal + iva).toFixed(2);
+
+    Store.add('invoices', {
+      folio, type: 'emitted', clientId,
+      issueDate, dueDate, status: 'pending',
+      subtotal, iva, total,
+      cfdiUse: 'G03', metodoPago: 'PPD', formaPago: '99',
+      items: selectedForecasts.map(f => ({ description: f.concept, qty: 1, unit: 'E48', unitPrice: f.amount, discount: 0, total: f.amount })),
+      notes: ''
+    });
+
+    // Always remove the billed forecasts
+    selectedForecasts.forEach(f => Store.remove('forecasts', f.id));
+
+    const allInvs = Store.all('invoices');
+    const newInvId = allInvs[allInvs.length - 1].id;
+
+    Store.logActivity('Facturó proyecciones', `${folio} · ${client.name}`);
+    render();
+
+    // Success modal with link to the new invoice
+    Modal.open(`
+      <div class="modal-head">
+        <div>
+          <h3 style="color:var(--success);">✓ Factura creada</h3>
+          <div class="sub">${client.name} · ${folio}</div>
+        </div>
+        <button class="modal-close" onclick="Jobby.Modal.close()">✕</button>
+      </div>
+      <div style="padding:8px 0 16px;display:flex;flex-direction:column;gap:8px;">
+        <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:0.82rem;padding:10px 14px;background:var(--bone);border-radius:7px;">
+          <span style="color:var(--stone);">Total facturado</span>
+          <span style="color:var(--ink);font-weight:600;">${fmt.mxn(total)}</span>
+        </div>
+        <div style="font-family:var(--mono);font-size:0.75rem;color:var(--stone);padding:0 2px;">
+          ${selectedForecasts.length} proyección${selectedForecasts.length !== 1 ? 'es eliminadas' : ' eliminada'} del forecast
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-ghost btn-sm" onclick="Jobby.Modal.close()">Cerrar</button>
+        <a href="factura-detalle.html?id=${newInvId}" class="btn btn-primary btn-sm" style="text-decoration:none;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="vertical-align:-2px;margin-right:4px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="7" x2="15" y2="7"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="17" x2="13" y2="17"/></svg>
+          Ver factura
+        </a>
+      </div>`, { width: '400px' });
+  };
+
+  // ── Delete prospect ──────────────────────────────────────────
+  window.deleteProspect = (prospectId) => {
+    const client = Store.find('clients', prospectId);
+    if (!confirm(`¿Eliminar el prospecto "${client.name}" y todos sus forecasts?`)) return;
+    Store.all('forecasts').filter(f => f.clientId === prospectId).forEach(f => Store.remove('forecasts', f.id));
+    Store.remove('clients', prospectId);
+    sessionCreatedIds.delete(prospectId);
+    Store.logActivity('Eliminó prospecto', client.name);
+    refreshClientFilter();
+    toast(`Prospecto "${client.name}" eliminado`, 'error');
+    render();
+  };
+
+  // ── Prospect form autocomplete ───────────────────────────────
+  (function setupAutocomplete() {
+    const input = document.getElementById('pfName');
+    const dropdown = document.getElementById('pfNameDropdown');
+    input.addEventListener('input', () => {
+      pfSelectedClientId = null;
+      const val = input.value.trim().toLowerCase();
+      if (!val) { dropdown.style.display = 'none'; return; }
+      const matches = Store.all('clients').filter(c => c.name.toLowerCase().includes(val));
+      if (!matches.length) { dropdown.style.display = 'none'; return; }
+      dropdown.innerHTML = matches.map(c => {
+        const badge = c.status === 'prospect'
+          ? `<span class="ac-badge">Prospecto</span>`
+          : `<span class="ac-badge active">Cliente</span>`;
+        return `<div class="autocomplete-item" data-id="${c.id}" data-name="${c.name.replace(/"/g,'&quot;')}">${c.name}${badge}</div>`;
+      }).join('');
+      dropdown.style.display = 'block';
+    });
+    dropdown.addEventListener('mousedown', e => {
+      const item = e.target.closest('.autocomplete-item');
+      if (!item) return;
+      pfSelectedClientId = item.dataset.id;
+      input.value = item.dataset.name;
+      dropdown.style.display = 'none';
+    });
+    document.addEventListener('click', e => {
+      if (!e.target.closest('.autocomplete-wrap')) dropdown.style.display = 'none';
+    });
+  })();
+
+  // ── Service dropdown handlers ────────────────────────────────
+  window.onServiceChange = (cid) => {
+    const sel = document.getElementById('ii-service-' + cid);
+    const addWrap = document.getElementById('ii-service-add-' + cid);
+    if (!sel || !addWrap) return;
+    addWrap.style.display = sel.value === '__add__' ? 'block' : 'none';
+    if (sel.value === '__add__') document.getElementById('ii-service-new-' + cid).focus();
+  };
+
+  window.confirmNewService = (cid) => {
+    const inp = document.getElementById('ii-service-new-' + cid);
+    const name = inp.value.trim();
+    if (!name) return;
+    addService(name);
+    const sel = document.getElementById('ii-service-' + cid);
+    sel.innerHTML = buildServiceOpts();
+    sel.value = name;
+    document.getElementById('ii-service-add-' + cid).style.display = 'none';
+  };
+
+  window.onPfServiceChange = () => {
+    const sel = document.getElementById('pfService');
+    const addWrap = document.getElementById('pfServiceAdd');
+    addWrap.style.display = sel.value === '__add__' ? 'flex' : 'none';
+    if (sel.value === '__add__') document.getElementById('pfServiceNew').focus();
+  };
+
+  window.confirmPfNewService = () => {
+    const inp = document.getElementById('pfServiceNew');
+    const name = inp.value.trim();
+    if (!name) return;
+    addService(name);
+    const sel = document.getElementById('pfService');
+    sel.innerHTML = buildServiceOpts();
+    sel.value = name;
+    document.getElementById('pfServiceAdd').style.display = 'none';
+  };
+
+  // ── Init ─────────────────────────────────────────────────────
+  refreshClientFilter();
+  render();
+})();
+</script>
+<script src="demo-aviso.js"></script>
+</body>
+</html>

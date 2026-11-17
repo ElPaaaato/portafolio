@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Configuración · Jobby</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+  .switch { position: relative; display: inline-block; width: 40px; height: 22px; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider { position: absolute; cursor: pointer; inset: 0; background: var(--line-2); border-radius: 22px; transition: 200ms; }
+  .slider::before { position: absolute; content: ''; height: 16px; width: 16px; left: 3px; bottom: 3px; background: var(--paper); border-radius: 50%; transition: 200ms; }
+  .switch input:checked + .slider { background: var(--moss); }
+  .switch input:checked + .slider::before { transform: translateX(18px); }
+  .setting-row { display: grid; grid-template-columns: 1fr 60px; gap: 20px; padding: 16px 0; border-bottom: 1px solid var(--line); align-items: center; }
+  .setting-row:last-child { border: 0; }
+  .setting-row .title { font-size: 0.95rem; color: var(--ink); margin-bottom: 4px; }
+  .setting-row .desc { font-size: 0.82rem; color: var(--stone); }
+  .integ-row { display: grid; grid-template-columns: 40px 1fr auto; gap: 14px; padding: 16px; background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-md); margin-bottom: 10px; align-items: center; }
+  .integ-icon { width: 40px; height: 40px; border-radius: 8px; background: var(--bone); display: grid; place-items: center; font-weight: 600; color: var(--ink); font-family: var(--serif); font-size: 0.9rem; }
+  .integ-info .name { font-size: 0.95rem; color: var(--ink); }
+  .integ-info .meta { font-family: var(--mono); font-size: 0.8rem; color: var(--stone); margin-top: 2px; }
+  .integ-status { display: inline-flex; gap: 6px; align-items: center; font-family: var(--mono); font-size: 0.78rem; color: var(--success); }
+  .integ-status .dot { width: 7px; height: 7px; background: var(--success); border-radius: 50%; }
+  .plan-card { background: linear-gradient(135deg, rgba(15, 81, 50, 0.06), rgba(201, 162, 39, 0.08)); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 24px; margin-bottom: 16px; }
+  .plan-name { font-family: var(--serif); font-size: 1.4rem; color: var(--ink); margin-bottom: 4px; }
+  .plan-price { font-family: var(--mono); color: var(--stone); font-size: 0.9rem; margin-bottom: 14px; }
+  .plan-features { list-style: none; padding: 0; margin: 14px 0 0; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.88rem; color: var(--slate); }
+  .plan-features li::before { content: '✓ '; color: var(--success); font-weight: 600; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <aside class="sidebar"></aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="title">
+        <div class="eyebrow">Administración</div>
+        <h1 style="margin-top: 8px;">Configuración</h1>
+        <p>Ajusta los datos de tu empresa, preferencias y integraciones.</p>
+      </div>
+    </div>
+
+    <div class="vtabs">
+      <ul class="vtab-list">
+        <li><a href="#empresa" class="active" data-t="empresa">Empresa</a></li>
+        <li><a href="#facturacion" data-t="facturacion">Facturación CFDI</a></li>
+        <li><a href="#notificaciones" data-t="notificaciones">Notificaciones</a></li>
+        <li><a href="#integraciones" data-t="integraciones">Integraciones</a></li>
+        <li><a href="#plan" data-t="plan">Plan y facturación</a></li>
+      </ul>
+
+      <div>
+        <!-- EMPRESA -->
+        <div class="tab-panel active" id="t-empresa">
+          <div class="fieldset">
+            <h4>Datos fiscales</h4>
+            <div class="desc">Esta información aparece en tus facturas emitidas y se reporta al SAT.</div>
+            <div class="form-row">
+              <div class="form-field"><label>Razón social</label><input type="text" id="fName"></div>
+              <div class="form-field"><label>RFC</label><input type="text" id="fRfc" style="text-transform: uppercase;"></div>
+            </div>
+            <div class="form-row full">
+              <div class="form-field"><label>Domicilio fiscal</label><input type="text" id="fAddr"></div>
+            </div>
+            <div class="form-row">
+              <div class="form-field"><label>Régimen fiscal</label>
+                <select id="fRegime">
+                  <option>601 - General de Ley Personas Morales</option>
+                  <option>603 - Personas Morales con Fines no Lucrativos</option>
+                  <option>605 - Sueldos y Salarios</option>
+                  <option>612 - Personas Físicas con Actividad Empresarial</option>
+                  <option>621 - Incorporación Fiscal</option>
+                  <option>626 - RESICO Personas Morales</option>
+                </select></div>
+              <div class="form-field"><label>Moneda principal</label>
+                <select id="fCurrency"><option>MXN - Peso Mexicano</option><option>USD - Dólar</option></select></div>
+            </div>
+          </div>
+
+          <div class="fieldset">
+            <h4>Logo de la empresa</h4>
+            <div class="desc">Aparecerá en tus facturas y correos enviados.</div>
+            <div style="display:flex;gap:20px;align-items:center;">
+              <div id="logoPreview" style="width:80px;height:80px;border-radius:var(--r-md);background:var(--bone);border:2px dashed var(--line-2);display:grid;place-items:center;color:var(--stone);font-family:var(--mono);font-size:0.72rem;">Sin logo</div>
+              <div>
+                <button class="btn btn-secondary btn-sm">Subir imagen</button>
+                <p style="font-size: 0.8rem; color: var(--stone); margin-top: 8px;">PNG o JPG, mínimo 200x200px</p>
+              </div>
+            </div>
+          </div>
+
+          <button class="btn btn-primary" onclick="saveCompany()">Guardar cambios</button>
+        </div>
+
+        <!-- FACTURACION -->
+        <div class="tab-panel" id="t-facturacion">
+          <div class="fieldset">
+            <h4>Certificado e.firma (CSD)</h4>
+            <div class="desc">Tus certificados del SAT para timbrar facturas.</div>
+            <div style="display:flex;gap:12px;align-items:center;padding:14px;background:rgba(47,125,79,0.08);border-left:3px solid var(--success);border-radius:var(--r-md);margin-bottom: 16px;">
+              <span style="color: var(--success);">●</span>
+              <div style="flex:1;"><strong>Certificado activo</strong><div style="font-size:0.82rem;color:var(--stone);font-family:var(--mono);">Vence el 15 de octubre de 2027 · GTM120415AB9</div></div>
+              <button class="btn btn-ghost btn-sm">Renovar</button>
+            </div>
+          </div>
+
+          <div class="fieldset">
+            <h4>Valores por defecto</h4>
+            <div class="desc">Estos valores se precargan al crear una factura nueva.</div>
+            <div class="form-row">
+              <div class="form-field"><label>Método de pago CFDI</label>
+                <select><option>PUE - Pago en una exhibición</option><option selected>PPD - Pago en parcialidades</option></select></div>
+              <div class="form-field"><label>Uso de CFDI</label>
+                <select><option>G01 - Adquisición de mercancías</option><option selected>G03 - Gastos en general</option></select></div>
+            </div>
+            <div class="form-row">
+              <div class="form-field"><label>Serie de facturas</label><input type="text" value="A"></div>
+              <div class="form-field"><label>Siguiente folio</label><input type="number" id="nextFolio" disabled></div>
+            </div>
+            <div class="form-row">
+              <div class="form-field"><label>Días de crédito por defecto</label><input type="number" value="30"></div>
+              <div class="form-field"><label>Tasa de IVA (%)</label><input type="number" value="16" step="0.01"></div>
+            </div>
+          </div>
+
+          <button class="btn btn-primary" onclick="Jobby.toast('Configuración CFDI guardada')">Guardar cambios</button>
+        </div>
+
+        <!-- NOTIFICACIONES -->
+        <div class="tab-panel" id="t-notificaciones">
+          <div class="fieldset">
+            <h4>Canales de notificación</h4>
+            <div class="desc">Decide cómo quieres que te avisemos sobre eventos importantes.</div>
+
+            <div class="setting-row">
+              <div>
+                <div class="title">Correo electrónico</div>
+                <div class="desc">Recibir notificaciones en mariana@grupotextil.mx</div>
+              </div>
+              <label class="switch"><input type="checkbox" id="nEmail" checked><span class="slider"></span></label>
+            </div>
+            <div class="setting-row">
+              <div>
+                <div class="title">WhatsApp Business</div>
+                <div class="desc">Mensajes al +52 81 2345 6789</div>
+              </div>
+              <label class="switch"><input type="checkbox" id="nWhats" checked><span class="slider"></span></label>
+            </div>
+            <div class="setting-row">
+              <div>
+                <div class="title">Notificaciones push (móvil)</div>
+                <div class="desc">Alertas en tiempo real en tu teléfono</div>
+              </div>
+              <label class="switch"><input type="checkbox"><span class="slider"></span></label>
+            </div>
+          </div>
+
+          <div class="fieldset">
+            <h4>Eventos</h4>
+            <div class="desc">¿Sobre qué quieres recibir alertas?</div>
+            <div class="setting-row">
+              <div><div class="title">Factura vencida</div><div class="desc">Cuando un cliente pasa la fecha de pago</div></div>
+              <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+            </div>
+            <div class="setting-row">
+              <div><div class="title">Pago recibido</div><div class="desc">Cuando se registra un cobro en banco</div></div>
+              <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+            </div>
+            <div class="setting-row">
+              <div><div class="title">Factura por vencer (5 días antes)</div><div class="desc">Recordatorio preventivo</div></div>
+              <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+            </div>
+            <div class="setting-row">
+              <div><div class="title">Resumen semanal</div><div class="desc">Cada lunes a las 9:00 AM</div></div>
+              <label class="switch"><input type="checkbox"><span class="slider"></span></label>
+            </div>
+            <div class="setting-row">
+              <div><div class="title">Crédito del cliente al 80%</div><div class="desc">Cuando un cliente está por alcanzar su límite</div></div>
+              <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+            </div>
+          </div>
+
+          <button class="btn btn-primary" onclick="saveNotifs()">Guardar preferencias</button>
+        </div>
+
+        <!-- INTEGRACIONES -->
+        <div class="tab-panel" id="t-integraciones">
+          <div class="fieldset">
+            <h4>SAT</h4>
+            <div class="desc">Sincronización automática de facturas emitidas y recibidas.</div>
+            <div class="integ-row">
+              <div class="integ-icon">S</div>
+              <div class="integ-info">
+                <div class="name">Servicio de Administración Tributaria</div>
+                <div class="meta">Último sync: hace 12 min · 847 CFDI sincronizados</div>
+              </div>
+              <div><span class="integ-status"><span class="dot"></span>Conectado</span></div>
+            </div>
+          </div>
+
+          <div class="fieldset">
+            <h4>Bancos</h4>
+            <div class="desc">Conecta tus cuentas bancarias para conciliación automática.</div>
+            <div class="integ-row">
+              <div class="integ-icon" style="background:#004481;color:#fff;">B</div>
+              <div class="integ-info">
+                <div class="name">BBVA México</div>
+                <div class="meta">Cuenta principal ****4521 · 3 cuentas conectadas</div>
+              </div>
+              <div><span class="integ-status"><span class="dot"></span>Conectado</span></div>
+            </div>
+            <div class="integ-row">
+              <div class="integ-icon" style="background:#EC0000;color:#fff;">S</div>
+              <div class="integ-info">
+                <div class="name">Santander</div>
+                <div class="meta">Cuenta USD ****8907</div>
+              </div>
+              <div><span class="integ-status"><span class="dot"></span>Conectado</span></div>
+            </div>
+            <div class="integ-row">
+              <div class="integ-icon" style="background:#EB0029;color:#fff;">B</div>
+              <div class="integ-info">
+                <div class="name">Banorte</div>
+                <div class="meta">Cuenta de nómina ****2134</div>
+              </div>
+              <div><span class="integ-status"><span class="dot"></span>Conectado</span></div>
+            </div>
+            <button class="btn btn-secondary btn-sm" style="margin-top: 10px;">+ Conectar otro banco</button>
+          </div>
+
+          <div class="fieldset">
+            <h4>Otras integraciones</h4>
+            <div class="integ-row">
+              <div class="integ-icon">W</div>
+              <div class="integ-info">
+                <div class="name">WhatsApp Business API</div>
+                <div class="meta">Para enviar recordatorios a clientes</div>
+              </div>
+              <div><span class="integ-status"><span class="dot"></span>Conectado</span></div>
+            </div>
+            <div class="integ-row">
+              <div class="integ-icon" style="background:#f1f1f1;">Z</div>
+              <div class="integ-info">
+                <div class="name">Zapier</div>
+                <div class="meta">Automatiza flujos con +5,000 apps</div>
+              </div>
+              <div><button class="btn btn-secondary btn-sm">Conectar</button></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PLAN -->
+        <div class="tab-panel" id="t-plan">
+          <div class="plan-card">
+            <div class="plan-name">Jobby Profesional</div>
+            <div class="plan-price">$1,499 MXN / mes · próximo cobro: 15 de mayo de 2026</div>
+            <ul class="plan-features">
+              <li>Hasta 500 facturas/mes</li>
+              <li>Hasta 10 usuarios</li>
+              <li>Conexión con 5 bancos</li>
+              <li>Soporte prioritario</li>
+              <li>API completa</li>
+              <li>Reportes avanzados</li>
+            </ul>
+          </div>
+
+          <div class="fieldset">
+            <h4>Método de pago</h4>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:14px;background:var(--bone);border-radius:var(--r-md);">
+              <div style="display:flex;gap:12px;align-items:center;">
+                <div style="width:36px;height:24px;background:var(--ink);border-radius:4px;color:var(--cream);font-family:var(--mono);font-size:0.65rem;display:grid;place-items:center;">VISA</div>
+                <div><strong>Tarjeta ****4521</strong><div style="font-size:0.82rem;color:var(--stone);font-family:var(--mono);">Expira 12/28</div></div>
+              </div>
+              <button class="btn btn-ghost btn-sm">Cambiar</button>
+            </div>
+          </div>
+
+          <div class="fieldset">
+            <h4>Historial de facturación</h4>
+            <table style="width:100%;">
+              <thead><tr><th style="text-align:left;padding:10px 0;font-family:var(--mono);font-size:0.72rem;color:var(--stone);">Fecha</th>
+                <th style="text-align:left;padding:10px 0;font-family:var(--mono);font-size:0.72rem;color:var(--stone);">Descripción</th>
+                <th style="text-align:right;padding:10px 0;font-family:var(--mono);font-size:0.72rem;color:var(--stone);">Monto</th>
+                <th style="padding:10px 0;"></th></tr></thead>
+              <tbody>
+                <tr style="border-top:1px solid var(--line);"><td class="mono" style="padding:12px 0;">15 abr 2026</td><td style="padding:12px 0;">Jobby Pro · Abril</td><td class="num" style="padding:12px 0;text-align:right;font-family:var(--mono);">$1,499.00</td><td style="padding:12px 0;text-align:right;"><a href="#" style="color:var(--ochre);font-size:0.82rem;">Descargar</a></td></tr>
+                <tr style="border-top:1px solid var(--line);"><td class="mono" style="padding:12px 0;">15 mar 2026</td><td style="padding:12px 0;">Jobby Pro · Marzo</td><td class="num" style="padding:12px 0;text-align:right;font-family:var(--mono);">$1,499.00</td><td style="padding:12px 0;text-align:right;"><a href="#" style="color:var(--ochre);font-size:0.82rem;">Descargar</a></td></tr>
+                <tr style="border-top:1px solid var(--line);"><td class="mono" style="padding:12px 0;">15 feb 2026</td><td style="padding:12px 0;">Jobby Pro · Febrero</td><td class="num" style="padding:12px 0;text-align:right;font-family:var(--mono);">$1,499.00</td><td style="padding:12px 0;text-align:right;"><a href="#" style="color:var(--ochre);font-size:0.82rem;">Descargar</a></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div style="display:flex;gap:10px;margin-top:20px;">
+            <button class="btn btn-secondary">Cambiar de plan</button>
+            <button class="btn btn-ghost" style="color: var(--danger);">Cancelar suscripción</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="app.js"></script>
+<script>
+(function () {
+  const { Store, mountSidebar, toast } = Jobby;
+  mountSidebar('configuracion');
+
+  const c = Store.company;
+  document.getElementById('fName').value = c.name;
+  document.getElementById('fRfc').value = c.rfc;
+  document.getElementById('fAddr').value = c.address;
+  document.getElementById('fRegime').value = c.fiscalRegime;
+  document.getElementById('fCurrency').value = c.currency === 'MXN' ? 'MXN - Peso Mexicano' : 'USD - Dólar';
+
+  // Folio dinámico
+  const invs = Store.all('invoices').filter(i => i.folio.startsWith('A-'));
+  const nextFolio = invs.length > 0 ? Math.max(...invs.map(i => parseInt(i.folio.slice(2)) || 0)) + 1 : 1;
+  document.getElementById('nextFolio').value = nextFolio;
+
+  document.getElementById('nEmail').checked = c.emailNotifications;
+  document.getElementById('nWhats').checked = c.whatsappEnabled;
+
+  document.querySelectorAll('.vtab-list a').forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      document.querySelectorAll('.vtab-list a').forEach(x => x.classList.remove('active'));
+      a.classList.add('active');
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      document.getElementById('t-' + a.dataset.t).classList.add('active');
+      history.replaceState(null, '', '#' + a.dataset.t);
+    });
+  });
+
+  // Initial hash
+  if (location.hash) {
+    const t = location.hash.slice(1);
+    const a = document.querySelector(`.vtab-list a[data-t="${t}"]`);
+    if (a) a.click();
+  }
+
+  window.saveCompany = () => {
+    const updated = {
+      ...c,
+      name: document.getElementById('fName').value,
+      rfc: document.getElementById('fRfc').value.toUpperCase(),
+      address: document.getElementById('fAddr').value,
+      fiscalRegime: document.getElementById('fRegime').value
+    };
+    Store.company = updated;
+    Store.logActivity('Actualizó datos de empresa', null);
+    toast('Datos de la empresa guardados');
+  };
+
+  window.saveNotifs = () => {
+    Store.company = { ...c, emailNotifications: document.getElementById('nEmail').checked, whatsappEnabled: document.getElementById('nWhats').checked };
+    Store.logActivity('Actualizó preferencias de notificación', null);
+    toast('Preferencias guardadas');
+  };
+})();
+</script>
+<script src="demo-aviso.js"></script>
+</body>
+</html>

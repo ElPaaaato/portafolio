@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Conectar con el SAT · Jobby</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  body { background: var(--cream); }
+  .onb-shell { max-width: 800px; margin: 0 auto; padding: 40px 24px 80px; }
+  .onb-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 40px; }
+  .onb-logo .brand { font-family: var(--serif); font-size: 1.4rem; color: var(--ink); }
+  .onb-head { text-align: center; margin-bottom: 40px; }
+  .onb-head .eyebrow { font-family: var(--mono); font-size: 0.78rem; color: var(--ochre); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px; }
+  .onb-head h1 { font-family: var(--serif); font-size: 2.2rem; color: var(--ink); margin-bottom: 12px; letter-spacing: -0.02em; }
+  .onb-head p { color: var(--slate); font-size: 1rem; max-width: 540px; margin: 0 auto; }
+
+  .onb-card { background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 40px; margin-bottom: 24px; box-shadow: var(--shadow-sm); }
+  .onb-card h2 { font-family: var(--serif); font-size: 1.4rem; color: var(--ink); margin-bottom: 6px; }
+  .onb-card .card-sub { color: var(--stone); font-size: 0.9rem; margin-bottom: 28px; }
+
+  .upload-area { border: 2px dashed var(--line-2); border-radius: var(--r-md); padding: 30px; text-align: center; transition: all 150ms; cursor: pointer; background: var(--bone); }
+  .upload-area:hover { border-color: var(--ochre); background: rgba(184, 98, 46, 0.04); }
+  .upload-area.done { border-color: var(--success); background: rgba(47, 125, 79, 0.06); cursor: default; }
+  .upload-area .uic { font-size: 1.8rem; color: var(--stone); margin-bottom: 8px; font-family: var(--serif); }
+  .upload-area.done .uic { color: var(--success); }
+  .upload-area .t { font-size: 0.95rem; color: var(--ink); margin-bottom: 4px; }
+  .upload-area .d { font-size: 0.82rem; color: var(--stone); font-family: var(--mono); }
+
+  .bank-card { display: grid; grid-template-columns: 44px 1fr auto; gap: 14px; padding: 16px 18px; background: var(--bone); border: 1px solid var(--line); border-radius: var(--r-md); margin-bottom: 10px; align-items: center; transition: all 120ms; cursor: pointer; }
+  .bank-card:hover { border-color: var(--ink); }
+  .bank-card.selected { border-color: var(--moss); background: rgba(15, 81, 50, 0.06); }
+  .bank-logo { width: 44px; height: 44px; border-radius: 8px; display: grid; place-items: center; font-family: var(--serif); font-weight: 600; color: var(--cream); }
+  .bank-info .name { font-size: 0.95rem; color: var(--ink); margin-bottom: 2px; }
+  .bank-info .desc { font-size: 0.8rem; color: var(--stone); font-family: var(--mono); }
+  .bank-check { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--line-2); display: grid; place-items: center; color: transparent; transition: 120ms; }
+  .bank-card.selected .bank-check { background: var(--moss); border-color: var(--moss); color: var(--cream); }
+
+  .pref-row { display: grid; grid-template-columns: 1fr 60px; gap: 20px; padding: 16px 0; border-bottom: 1px solid var(--line); align-items: center; }
+  .pref-row:last-child { border: 0; }
+  .pref-row .t { font-size: 0.95rem; color: var(--ink); margin-bottom: 4px; }
+  .pref-row .d { font-size: 0.82rem; color: var(--stone); }
+  .switch { position: relative; display: inline-block; width: 40px; height: 22px; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider { position: absolute; cursor: pointer; inset: 0; background: var(--line-2); border-radius: 22px; transition: 200ms; }
+  .slider::before { position: absolute; content: ''; height: 16px; width: 16px; left: 3px; bottom: 3px; background: var(--paper); border-radius: 50%; transition: 200ms; }
+  .switch input:checked + .slider { background: var(--moss); }
+  .switch input:checked + .slider::before { transform: translateX(18px); }
+
+  .nav-foot { display: flex; justify-content: space-between; align-items: center; padding-top: 20px; }
+
+  .success-state { text-align: center; padding: 40px 20px; }
+  .success-state .check-big { width: 80px; height: 80px; background: rgba(47, 125, 79, 0.12); border-radius: 50%; display: grid; place-items: center; margin: 0 auto 20px; color: var(--success); font-size: 2.2rem; font-weight: 300; }
+  .success-state h2 { font-family: var(--serif); font-size: 1.8rem; margin-bottom: 10px; }
+  .success-state p { color: var(--slate); margin-bottom: 28px; }
+</style>
+</head>
+<body>
+
+<div class="onb-shell">
+  <div class="onb-logo">
+    <svg width="28" height="28" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M4 28 Q14 18 24 28 T 44 28" stroke="#0F5132" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      <circle cx="38" cy="28" r="3.5" fill="#B8622E"/>
+    </svg>
+    <span class="brand">Jobby</span>
+  </div>
+
+  <div class="onb-head">
+    <div class="eyebrow">Configuración inicial</div>
+    <h1>Conecta tu empresa con el SAT</h1>
+    <p>Tres pasos rápidos: sube tus certificados, conecta tus bancos y define cómo quieres recibir alertas. Tardamos menos de cinco minutos.</p>
+  </div>
+
+  <div class="stepper" id="stepper">
+    <div class="step active" data-step="1">
+      <div class="step-num">1</div>
+      <div class="step-info"><div class="t">e.firma y certificados</div><div class="d">Sube tu CSD y contraseña</div></div>
+    </div>
+    <div class="step" data-step="2">
+      <div class="step-num">2</div>
+      <div class="step-info"><div class="t">Cuentas bancarias</div><div class="d">Para conciliación automática</div></div>
+    </div>
+    <div class="step" data-step="3">
+      <div class="step-num">3</div>
+      <div class="step-info"><div class="t">Notificaciones</div><div class="d">Cómo quieres enterarte</div></div>
+    </div>
+  </div>
+
+  <!-- PASO 1 -->
+  <div class="onb-card" id="panel-1">
+    <h2>Tus certificados del SAT</h2>
+    <div class="card-sub">Necesitamos tu Certificado de Sello Digital (CSD) para timbrar facturas en tu nombre. Es distinto a tu e.firma.</div>
+
+    <div class="form-row">
+      <div class="form-field">
+        <label>RFC de la empresa</label>
+        <input type="text" id="satRfc" style="text-transform:uppercase;" value="GTM120415AB9">
+        <div class="form-help">Ya lo tenemos precargado desde tu perfil.</div>
+      </div>
+      <div class="form-field">
+        <label>Contraseña del CSD</label>
+        <input type="password" placeholder="Mínimo 8 caracteres" id="csdPass">
+        <div class="form-help">Se almacena cifrada end-to-end.</div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px;">
+      <div class="upload-area" id="uCer" onclick="fakeUpload('cer')">
+        <div class="uic" id="uCerIcon">↑</div>
+        <div class="t" id="uCerTitle">Certificado (.cer)</div>
+        <div class="d" id="uCerDesc">Haz clic o arrastra el archivo</div>
+      </div>
+      <div class="upload-area" id="uKey" onclick="fakeUpload('key')">
+        <div class="uic" id="uKeyIcon">↑</div>
+        <div class="t" id="uKeyTitle">Clave privada (.key)</div>
+        <div class="d" id="uKeyDesc">Haz clic o arrastra el archivo</div>
+      </div>
+    </div>
+
+    <div style="margin-top:20px;padding:14px;background:rgba(58,107,140,0.08);border-left:3px solid #3A6B8C;border-radius:var(--r-md);font-size:0.85rem;color:var(--slate);">
+      <strong>¿No tienes tu CSD?</strong> Puedes tramitarlo en el <a href="#" onclick="event.preventDefault()" style="color:var(--ochre);">portal del SAT</a> con tu e.firma. Tarda menos de 30 minutos.
+    </div>
+
+    <div class="nav-foot">
+      <button class="btn btn-ghost" onclick="location.href='dashboard.html'">Omitir por ahora</button>
+      <button class="btn btn-primary" onclick="next(1)">Validar y continuar →</button>
+    </div>
+  </div>
+
+  <!-- PASO 2 -->
+  <div class="onb-card" id="panel-2" style="display:none;">
+    <h2>Conecta tus bancos</h2>
+    <div class="card-sub">Sincronizamos tus movimientos para conciliar pagos automáticamente. Usamos Open Banking certificado — nunca guardamos tus contraseñas.</div>
+
+    <div>
+      <div class="bank-card" data-bank="BBVA" onclick="toggleBank(this)">
+        <div class="bank-logo" style="background:#004481;">B</div>
+        <div class="bank-info"><div class="name">BBVA México</div><div class="desc">Cuentas empresariales y nómina</div></div>
+        <div class="bank-check">✓</div>
+      </div>
+      <div class="bank-card" data-bank="Santander" onclick="toggleBank(this)">
+        <div class="bank-logo" style="background:#EC0000;">S</div>
+        <div class="bank-info"><div class="name">Santander</div><div class="desc">Cuentas MXN y USD</div></div>
+        <div class="bank-check">✓</div>
+      </div>
+      <div class="bank-card" data-bank="Banorte" onclick="toggleBank(this)">
+        <div class="bank-logo" style="background:#EB0029;">B</div>
+        <div class="bank-info"><div class="name">Banorte</div><div class="desc">Personas morales y PYME</div></div>
+        <div class="bank-check">✓</div>
+      </div>
+      <div class="bank-card" data-bank="HSBC" onclick="toggleBank(this)">
+        <div class="bank-logo" style="background:#DB0011;">H</div>
+        <div class="bank-info"><div class="name">HSBC</div><div class="desc">Banca de negocios</div></div>
+        <div class="bank-check">✓</div>
+      </div>
+      <div class="bank-card" data-bank="Banamex" onclick="toggleBank(this)">
+        <div class="bank-logo" style="background:#003DA5;">C</div>
+        <div class="bank-info"><div class="name">Citibanamex</div><div class="desc">Cuentas empresariales</div></div>
+        <div class="bank-check">✓</div>
+      </div>
+    </div>
+
+    <div style="margin-top:16px;text-align:center;">
+      <p style="font-size:0.82rem;color:var(--stone);">También puedes conectar más bancos después desde Configuración.</p>
+    </div>
+
+    <div class="nav-foot">
+      <button class="btn btn-ghost" onclick="back(2)">← Atrás</button>
+      <button class="btn btn-primary" onclick="next(2)">Continuar →</button>
+    </div>
+  </div>
+
+  <!-- PASO 3 -->
+  <div class="onb-card" id="panel-3" style="display:none;">
+    <h2>Avísame cuando…</h2>
+    <div class="card-sub">Elige los canales y tipos de eventos sobre los que quieres recibir alertas.</div>
+
+    <h4 style="font-family:var(--mono);font-size:0.78rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--stone);margin-bottom:10px;">Canales</h4>
+    <div class="pref-row">
+      <div><div class="t">Correo electrónico</div><div class="d">A tu correo registrado</div></div>
+      <label class="switch"><input type="checkbox" id="pEmail" checked><span class="slider"></span></label>
+    </div>
+    <div class="pref-row">
+      <div><div class="t">WhatsApp Business</div><div class="d">Mensajes al número que nos confirmes</div></div>
+      <label class="switch"><input type="checkbox" id="pWhats" checked><span class="slider"></span></label>
+    </div>
+    <div class="pref-row">
+      <div><div class="t">Notificaciones push en tu móvil</div><div class="d">Descarga la app desde App Store o Google Play</div></div>
+      <label class="switch"><input type="checkbox" id="pPush"><span class="slider"></span></label>
+    </div>
+
+    <h4 style="font-family:var(--mono);font-size:0.78rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--stone);margin:30px 0 10px;">Eventos</h4>
+    <div class="pref-row">
+      <div><div class="t">Factura vencida</div><div class="d">Un cliente pasó su fecha de pago</div></div>
+      <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+    </div>
+    <div class="pref-row">
+      <div><div class="t">Pago recibido</div><div class="d">Se detectó un cobro en tu cuenta bancaria</div></div>
+      <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+    </div>
+    <div class="pref-row">
+      <div><div class="t">Factura por vencer (5 días antes)</div><div class="d">Recordatorio preventivo</div></div>
+      <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+    </div>
+    <div class="pref-row">
+      <div><div class="t">Resumen semanal</div><div class="d">Cada lunes a las 9:00 AM</div></div>
+      <label class="switch"><input type="checkbox"><span class="slider"></span></label>
+    </div>
+    <div class="pref-row">
+      <div><div class="t">Cliente cerca de su límite de crédito</div><div class="d">Al llegar al 80% del crédito otorgado</div></div>
+      <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+    </div>
+
+    <div class="nav-foot">
+      <button class="btn btn-ghost" onclick="back(3)">← Atrás</button>
+      <button class="btn btn-primary" onclick="finish()">Finalizar configuración</button>
+    </div>
+  </div>
+
+  <!-- PASO 4: success -->
+  <div class="onb-card" id="panel-4" style="display:none;">
+    <div class="success-state">
+      <div class="check-big">✓</div>
+      <h2>¡Todo listo!</h2>
+      <p>Tu empresa está conectada con el SAT y tus bancos. Estamos sincronizando tus facturas históricas; esto puede tardar unos minutos.</p>
+      <button class="btn btn-primary" onclick="location.href='dashboard.html'">Ir al dashboard</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+<script>
+(function () {
+  const { Store, toast } = Jobby;
+
+  const filesState = { cer: false, key: false };
+  const banksState = new Set();
+
+  window.fakeUpload = (type) => {
+    filesState[type] = !filesState[type];
+    const el = document.getElementById('u' + type.charAt(0).toUpperCase() + type.slice(1));
+    const icon = document.getElementById('u' + type.charAt(0).toUpperCase() + type.slice(1) + 'Icon');
+    const title = document.getElementById('u' + type.charAt(0).toUpperCase() + type.slice(1) + 'Title');
+    const desc = document.getElementById('u' + type.charAt(0).toUpperCase() + type.slice(1) + 'Desc');
+
+    if (filesState[type]) {
+      el.classList.add('done');
+      icon.textContent = '✓';
+      title.textContent = type === 'cer' ? 'certificado.cer' : 'clave_privada.key';
+      desc.textContent = 'Archivo cargado correctamente';
+      toast(type === 'cer' ? 'Certificado validado' : 'Clave privada validada');
+    } else {
+      el.classList.remove('done');
+      icon.textContent = '↑';
+      title.textContent = type === 'cer' ? 'Certificado (.cer)' : 'Clave privada (.key)';
+      desc.textContent = 'Haz clic o arrastra el archivo';
+    }
+  };
+
+  window.toggleBank = (el) => {
+    const bank = el.dataset.bank;
+    if (banksState.has(bank)) {
+      banksState.delete(bank);
+      el.classList.remove('selected');
+    } else {
+      banksState.add(bank);
+      el.classList.add('selected');
+    }
+  };
+
+  function setStep(n) {
+    document.querySelectorAll('.step').forEach(s => {
+      const num = +s.dataset.step;
+      s.classList.toggle('active', num === n);
+      s.classList.toggle('done', num < n);
+    });
+    [1, 2, 3, 4].forEach(i => {
+      document.getElementById('panel-' + i).style.display = i === n ? 'block' : 'none';
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  window.next = (from) => {
+    if (from === 1) {
+      if (!filesState.cer || !filesState.key) {
+        toast('Sube ambos archivos (.cer y .key) para continuar', 'error');
+        return;
+      }
+      if (!document.getElementById('csdPass').value) {
+        toast('Ingresa la contraseña del CSD', 'error');
+        return;
+      }
+    }
+    if (from === 2) {
+      if (banksState.size === 0) {
+        toast('Selecciona al menos un banco o salta este paso', 'error');
+        return;
+      }
+    }
+    setStep(from + 1);
+  };
+
+  window.back = (from) => setStep(from - 1);
+
+  window.finish = () => {
+    Store.company = { ...Store.company, satConnected: true };
+    Store.logActivity('Completó onboarding de SAT', null);
+    setStep(4);
+    toast('Configuración inicial completada');
+  };
+})();
+</script>
+<script src="demo-aviso.js"></script>
+</body>
+</html>

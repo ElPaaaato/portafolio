@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Detalle de factura · Jobby</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  .items-detail { width: 100%; border-collapse: collapse; margin: 16px 0; }
+  .items-detail th { background: var(--bone); border-bottom: 1px solid var(--line); padding: 10px 12px; font-family: var(--mono); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--stone); text-align: left; }
+  .items-detail td { padding: 12px; border-bottom: 1px solid var(--line); font-size: 0.9rem; }
+  .items-detail .num { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .side-card { background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 20px; margin-bottom: 16px; }
+  .side-card h4 { font-size: 0.88rem; font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.1em; color: var(--stone); margin-bottom: 14px; }
+  .actions-list { display: flex; flex-direction: column; gap: 6px; }
+  .actions-list .btn { justify-content: flex-start; width: 100%; text-align: left; }
+  .pay-row { padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .pay-row:last-child { border: 0; }
+  .pay-row .top { display: flex; justify-content: space-between; font-size: 0.9rem; }
+  .pay-row .date { color: var(--stone); font-family: var(--mono); font-size: 0.78rem; margin-top: 2px; }
+  .pay-row .amt { font-family: var(--mono); color: var(--success); font-weight: 500; }
+  .activity-item { padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 0.85rem; }
+  .activity-item:last-child { border: 0; }
+  .activity-item .act { color: var(--ink); }
+  .activity-item .who { color: var(--stone); font-family: var(--mono); font-size: 0.75rem; margin-top: 2px; }
+  .status-hero { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 999px; font-family: var(--mono); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; }
+  .stat-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px; }
+  .stat-item { background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-md); padding: 14px 16px; }
+  .stat-item .l { font-family: var(--mono); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--stone); margin-bottom: 4px; }
+  .stat-item .v { font-family: var(--serif); font-size: 1.3rem; color: var(--ink); font-variant-numeric: tabular-nums; }
+
+  .print-header, .print-footer { display: none; }
+
+  @media print {
+    @page { margin: 0; size: A4 portrait; }
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; box-sizing: border-box; }
+
+    body { background: white; font-family: 'Geist', 'Helvetica Neue', Arial, sans-serif; font-size: 9pt; color: #0E1F1A; margin: 0; }
+
+    /* Ocultar todo excepto el documento */
+    .sidebar, .topbar, .back-link, .stat-summary, .side-card,
+    .topbar-actions, .inv-layout > div:last-child { display: none !important; }
+    .app { display: block; }
+    .main { padding: 0; margin: 0; max-width: 100%; }
+    .inv-layout { display: block; }
+    .inv-internal-note { display: none !important; }
+
+    /* ── Documento base ── */
+    .inv-doc {
+      border: none !important;
+      box-shadow: none !important;
+      border-radius: 0 !important;
+      padding: 0 !important;
+      margin: 0 !important;
+    }
+
+    /* ── Header verde ── */
+    .print-header {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0 32px;
+      background: #0F5132;
+      padding: 22px 36px 20px;
+    }
+    .ph-left {}
+    .ph-brand {
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: 15pt;
+      font-weight: 700;
+      color: white;
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    .ph-brand svg { width: 22px; height: 22px; }
+    .ph-brand .dot { color: #D99050; }
+    .ph-co-name {
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: 11pt;
+      color: white;
+      font-weight: 600;
+      margin-bottom: 3px;
+    }
+    .ph-co-meta {
+      font-family: 'Geist Mono', 'Courier New', monospace;
+      font-size: 6.5pt;
+      color: rgba(255,255,255,0.65);
+      line-height: 1.65;
+      white-space: pre-line;
+    }
+    .ph-right {
+      text-align: right;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      justify-content: space-between;
+    }
+    .ph-doc-type {
+      font-family: 'Geist Mono', 'Courier New', monospace;
+      font-size: 6pt;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: rgba(255,255,255,0.5);
+      margin-bottom: 2px;
+    }
+    .ph-folio {
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: 22pt;
+      color: white;
+      line-height: 1;
+      font-weight: 700;
+    }
+    .ph-status-badge {
+      font-family: 'Geist Mono', 'Courier New', monospace;
+      font-size: 6.5pt;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      padding: 3px 8px;
+      border-radius: 4px;
+      background: rgba(255,255,255,0.15);
+      color: white;
+      margin-top: 4px;
+    }
+    .ph-dates {
+      font-family: 'Geist Mono', 'Courier New', monospace;
+      font-size: 6.5pt;
+      color: rgba(255,255,255,0.65);
+      line-height: 1.65;
+      text-align: right;
+    }
+
+    /* ── Contenido: todas las secciones tienen margen horizontal ── */
+    .pdf-body {
+      padding: 0 36px;
+    }
+
+    /* ── Barra de estado oculta en pantalla, visible solo en print ── */
+    .inv-head { display: none !important; }
+
+    /* ── Partidos: Emisor / Receptor ── */
+    .inv-parties {
+      display: grid !important;
+      grid-template-columns: 1fr 1fr !important;
+      gap: 16px !important;
+      padding: 18px 0 !important;
+      border-bottom: 1.5px solid #D9D0B8 !important;
+      margin-bottom: 0 !important;
+    }
+    .inv-party {
+      background: #FAFAF7;
+      border: 1px solid #E8E0CC;
+      border-radius: 6px;
+      padding: 12px 14px;
+    }
+    .inv-party .label {
+      font-family: 'Geist Mono', 'Courier New', monospace !important;
+      font-size: 6pt !important;
+      text-transform: uppercase !important;
+      letter-spacing: 0.12em !important;
+      color: #6B6B5E !important;
+      margin-bottom: 5px !important;
+    }
+    .inv-party .name {
+      font-family: 'Fraunces', Georgia, serif !important;
+      font-size: 10.5pt !important;
+      color: #0E1F1A !important;
+      margin-bottom: 4px !important;
+      line-height: 1.2 !important;
+    }
+    .inv-party .meta {
+      font-size: 7.5pt !important;
+      color: #4A4A40 !important;
+      line-height: 1.6 !important;
+    }
+
+    /* ── Metadata CFDI ── */
+    .pdf-meta {
+      padding: 14px 0 12px;
+      border-bottom: 1px solid #E8E0CC;
+    }
+    .pdf-meta-title {
+      font-family: 'Geist Mono', 'Courier New', monospace;
+      font-size: 6pt;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #8A8A7A;
+      margin-bottom: 8px;
+    }
+    .pdf-meta-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 4px 24px;
+      font-size: 7.5pt;
+      color: #4A4A40;
+      font-family: 'Geist Mono', 'Courier New', monospace;
+    }
+    .pdf-meta-grid b {
+      font-family: 'Geist', 'Helvetica Neue', Arial, sans-serif;
+      font-weight: 600;
+      color: #0E1F1A;
+    }
+    .pdf-meta-grid .full { grid-column: 1 / -1; }
+
+    /* ── Tabla de conceptos ── */
+    .pdf-items { margin: 14px 0 10px; }
+    .items-detail { width: 100%; border-collapse: collapse; }
+    .items-detail thead tr { background: #0F5132 !important; }
+    .items-detail th {
+      background: #0F5132 !important;
+      color: white !important;
+      font-family: 'Geist Mono', 'Courier New', monospace !important;
+      font-size: 6.5pt !important;
+      text-transform: uppercase !important;
+      letter-spacing: 0.08em !important;
+      padding: 7px 10px !important;
+      text-align: left;
+    }
+    .items-detail td {
+      font-size: 8pt !important;
+      color: #0E1F1A !important;
+      padding: 8px 10px !important;
+      border-bottom: 1px solid #EDE7D6 !important;
+      vertical-align: top;
+    }
+    .items-detail tbody tr:nth-child(even) td { background: #F9F5EA !important; }
+    .items-detail .num { text-align: right !important; font-family: 'Geist Mono', 'Courier New', monospace !important; }
+    .items-detail .item-clave {
+      font-family: 'Geist Mono', 'Courier New', monospace;
+      font-size: 6.5pt;
+      color: #8A8A7A;
+      display: block;
+      margin-top: 2px;
+    }
+
+    /* ── Importe con letra + Totales ── */
+    .pdf-bottom {
+      display: flex !important;
+      justify-content: space-between !important;
+      align-items: flex-start !important;
+      gap: 24px !important;
+      margin: 14px 0 !important;
+      padding-bottom: 14px !important;
+      border-bottom: 1px solid #E8E0CC !important;
+    }
+    .pdf-letra {
+      flex: 1;
+    }
+    .pdf-letra-title {
+      font-family: 'Geist Mono', 'Courier New', monospace;
+      font-size: 6pt;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #8A8A7A;
+      margin-bottom: 5px;
+    }
+    .pdf-letra-text {
+      font-size: 8pt;
+      font-weight: 600;
+      color: #0E1F1A;
+      line-height: 1.45;
+      text-transform: uppercase;
+    }
+    .totals-panel {
+      min-width: 220px !important;
+      width: 220px !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      background: none !important;
+      border: none !important;
+    }
+    .totals-row {
+      display: flex !important;
+      justify-content: space-between !important;
+      padding: 4px 0 !important;
+      font-size: 8pt !important;
+      color: #4A4A40 !important;
+      border-bottom: none !important;
+    }
+    .totals-row span { font-family: 'Geist Mono', 'Courier New', monospace !important; }
+    .totals-row span:first-child { font-family: 'Geist', 'Helvetica Neue', Arial, sans-serif !important; }
+    .totals-row.grand {
+      background: #0F5132 !important;
+      color: white !important;
+      border-radius: 5px !important;
+      padding: 7px 10px !important;
+      margin-top: 4px !important;
+    }
+    .totals-row.grand span { color: white !important; }
+    .totals-row.grand span:first-child {
+      font-family: 'Fraunces', Georgia, serif !important;
+      font-size: 9pt !important;
+      font-weight: 700 !important;
+    }
+    .totals-row.grand span:last-child {
+      font-family: 'Fraunces', Georgia, serif !important;
+      font-size: 10pt !important;
+      font-weight: 700 !important;
+    }
+
+    /* ── Observaciones ── */
+    .pdf-obs {
+      background: #F9F5EA;
+      border: 1px solid #E8E0CC;
+      border-radius: 5px;
+      padding: 10px 12px;
+      margin-bottom: 12px;
+    }
+    .pdf-obs-title {
+      font-family: 'Geist Mono', 'Courier New', monospace;
+      font-size: 6pt;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #8A8A7A;
+      margin-bottom: 5px;
+    }
+    .pdf-obs-text {
+      font-size: 8pt;
+      color: #0E1F1A;
+      line-height: 1.5;
+    }
+
+    /* ── Sello SAT ── */
+    .pdf-sat {
+      border: 1px dashed #BFBAA8;
+      border-radius: 5px;
+      padding: 10px 12px;
+      margin-bottom: 12px;
+    }
+    .pdf-sat-title {
+      font-family: 'Geist Mono', 'Courier New', monospace;
+      font-size: 6pt;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #0F5132;
+      font-weight: 700;
+      margin-bottom: 7px;
+    }
+    .pdf-sat-grid {
+      display: grid;
+      grid-template-columns: 130px 1fr;
+      gap: 3px 12px;
+      font-size: 6.5pt;
+      font-family: 'Geist Mono', 'Courier New', monospace;
+      color: #4A4A40;
+      line-height: 1.55;
+    }
+    .pdf-sat-grid .sat-key { color: #8A8A7A; }
+    .pdf-sat-grid .sat-val { color: #0E1F1A; word-break: break-all; }
+
+    /* ── Elaborado por ── */
+    .pdf-elaborado {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0 4px;
+      font-size: 7pt;
+      color: #8A8A7A;
+      font-family: 'Geist Mono', 'Courier New', monospace;
+      border-top: 1.5px solid #0F5132;
+    }
+    .pdf-elaborado strong { color: #0E1F1A; font-family: 'Geist', 'Helvetica Neue', Arial, sans-serif; }
+
+    /* ── Print footer oculto (no se usa fixed) ── */
+    .print-footer { display: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <aside class="sidebar"></aside>
+
+  <main class="main">
+    <a href="facturas.html" class="back-link">← Volver a facturas</a>
+
+    <div class="topbar">
+      <div class="title">
+        <div class="eyebrow" id="invType">Factura emitida</div>
+        <h1 style="margin-top: 8px;" id="invFolioTitle">—</h1>
+        <p id="invSubtitle">—</p>
+      </div>
+      <div class="topbar-actions" id="topActions"></div>
+    </div>
+
+    <div class="print-header">
+      <div class="ph-left">
+        <div class="ph-brand">
+          <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M4 20 C 10 8, 14 24, 20 12 S 28 20, 28 20" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+            <circle cx="28" cy="10" r="2.5" fill="#D99050"/>
+          </svg>
+          Jobby<span class="dot">.</span>
+        </div>
+        <div class="ph-co-name" id="printCoName">—</div>
+        <div class="ph-co-meta" id="printCoMeta">—</div>
+      </div>
+      <div class="ph-right">
+        <div>
+          <div class="ph-doc-type">Comprobante Fiscal Digital por Internet · CFDI 4.0</div>
+          <div class="ph-folio" id="printFolio">—</div>
+          <div class="ph-status-badge" id="printStatus">—</div>
+        </div>
+        <div class="ph-dates" id="printDates">—</div>
+      </div>
+    </div>
+
+    <div class="print-footer"></div>
+
+    <div class="stat-summary" id="statSummary"></div>
+
+    <div class="inv-layout">
+      <div class="inv-doc" id="invDoc"></div>
+      <div>
+        <div class="side-card">
+          <h4>Acciones</h4>
+          <div class="actions-list" id="actionsList"></div>
+        </div>
+        <div class="side-card">
+          <h4>Historial de pagos</h4>
+          <div id="payHistory"></div>
+        </div>
+        <div class="side-card">
+          <h4>Actividad</h4>
+          <div id="activityList"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="app.js"></script>
+<script>
+(function () {
+  const { Store, Calc, fmt, mountSidebar, toast, Modal, addDays } = Jobby;
+
+  /* ---- Catálogos SAT ---- */
+  const CFDI_USE = {
+    'G01':'G01 - Adquisición de mercancias','G02':'G02 - Devoluciones, descuentos o bonificaciones',
+    'G03':'G03 - Gastos en general','I01':'I01 - Construcciones',
+    'I02':'I02 - Mobilario y equipo de oficina','I03':'I03 - Equipo de transporte',
+    'I04':'I04 - Equipo de cómputo y accesorios','I05':'I05 - Dados, troqueles, moldes y herramental',
+    'I06':'I06 - Comunicaciones telefónicas','I07':'I07 - Comunicaciones satelitales',
+    'I08':'I08 - Otra maquinaria y equipo','D01':'D01 - Honorarios médicos y gastos hospitalarios',
+    'D02':'D02 - Gastos médicos por incapacidad','D03':'D03 - Gastos funerales',
+    'D04':'D04 - Donativos','D05':'D05 - Intereses reales por créditos hipotecarios',
+    'D06':'D06 - Aportaciones voluntarias al SAR','D07':'D07 - Primas por seguros de gastos médicos',
+    'D08':'D08 - Gastos de transportación escolar obligatoria',
+    'D09':'D09 - Depósitos para el ahorro y planes de pensiones',
+    'D10':'D10 - Pagos por servicios educativos (colegiaturas)',
+    'S01':'S01 - Sin efectos fiscales','CP01':'CP01 - Pagos','CN01':'CN01 - Nómina'
+  };
+  const FORMA_PAGO = {
+    '01':'01 - Efectivo','02':'02 - Cheque nominativo',
+    '03':'03 - Transferencia electrónica de fondos (SPEI)',
+    '04':'04 - Tarjeta de crédito','05':'05 - Monedero electrónico',
+    '06':'06 - Dinero electrónico','08':'08 - Vales de despensa',
+    '12':'12 - Dación en pago','13':'13 - Pago por subrogación',
+    '14':'14 - Pago por consignación','15':'15 - Condonación',
+    '17':'17 - Compensación','23':'23 - Novación','24':'24 - Confusión',
+    '25':'25 - Remisión de deuda','26':'26 - Prescripción o caducidad',
+    '27':'27 - A satisfacción del acreedor','28':'28 - Tarjeta de débito',
+    '29':'29 - Tarjeta de servicios','30':'30 - Aplicación de anticipos',
+    '31':'31 - Intermediario pagos','99':'99 - Por definir'
+  };
+  const METODO_PAGO = {
+    'PUE':'PUE - Pago en una sola exhibición',
+    'PPD':'PPD - Pago en parcialidades o diferido'
+  };
+
+  /* ---- Importe con letra ---- */
+  function numberToWords(amount) {
+    const n = Math.floor(amount);
+    const cents = Math.round((amount - n) * 100);
+    const ones = ['','UN','DOS','TRES','CUATRO','CINCO','SEIS','SIETE','OCHO','NUEVE',
+      'DIEZ','ONCE','DOCE','TRECE','CATORCE','QUINCE','DIECISÉIS','DIECISIETE','DIECIOCHO','DIECINUEVE'];
+    const tens = ['','','VEINTE','TREINTA','CUARENTA','CINCUENTA','SESENTA','SETENTA','OCHENTA','NOVENTA'];
+    const hunds = ['','CIENTO','DOSCIENTOS','TRESCIENTOS','CUATROCIENTOS','QUINIENTOS',
+      'SEISCIENTOS','SETECIENTOS','OCHOCIENTOS','NOVECIENTOS'];
+    function below1000(x) {
+      if (x === 0) return '';
+      if (x === 100) return 'CIEN';
+      if (x < 20) return ones[x];
+      const h = Math.floor(x / 100), r = x % 100;
+      const hs = hunds[h];
+      if (r === 0) return hs;
+      const t = Math.floor(r / 10), o = r % 10;
+      let w = hs ? hs + ' ' : '';
+      if (r < 20) w += ones[r];
+      else if (r < 30) w += (o === 0 ? 'VEINTE' : 'VEINTI' + ones[o]);
+      else w += tens[t] + (o > 0 ? ' Y ' + ones[o] : '');
+      return w.trim();
+    }
+    function convert(x) {
+      if (x === 0) return 'CERO';
+      if (x >= 1000000) {
+        const m = Math.floor(x / 1000000), r = x % 1000000;
+        return (m === 1 ? 'UN MILLÓN' : below1000(m) + ' MILLONES') + (r ? ' ' + convert(r) : '');
+      }
+      if (x >= 1000) {
+        const k = Math.floor(x / 1000), r = x % 1000;
+        return (k === 1 ? 'MIL' : below1000(k) + ' MIL') + (r ? ' ' + below1000(r) : '');
+      }
+      return below1000(x);
+    }
+    return convert(n) + ' PESOS ' + String(cents).padStart(2,'0') + '/100 M.N.';
+  }
+
+  /* ---- UUID falso para demo (determinístico por folio) ---- */
+  function demoUUID(folio) {
+    let h = 0;
+    for (let i = 0; i < folio.length; i++) h = (Math.imul(31, h) + folio.charCodeAt(i)) | 0;
+    const hex = (Math.abs(h) + 0x100000000).toString(16).padStart(8,'0').toUpperCase();
+    return `${hex.slice(0,8)}-${hex.slice(0,4)}-4${hex.slice(1,4)}-A${hex.slice(2,5)}-${hex}${hex.slice(0,4)}`.slice(0,36);
+  }
+  mountSidebar('facturas');
+
+  const id = new URLSearchParams(location.search).get('id');
+  const inv = Store.find('invoices', id);
+
+  if (!inv) {
+    document.querySelector('.main').innerHTML = `
+      <div class="empty"><div class="ic">?</div><h4>Factura no encontrada</h4>
+      <p>No encontramos la factura con ID ${id}.</p>
+      <a href="facturas.html" class="btn btn-primary btn-sm">Volver a facturas</a></div>`;
+    return;
+  }
+
+  render();
+
+  function render() {
+    const fresh = Store.find('invoices', id);
+    const client = fresh.clientId ? Store.find('clients', fresh.clientId) : null;
+    const company = Store.company;
+
+    // Print header
+    document.getElementById('printFolio').textContent = fresh.folio;
+    document.getElementById('printCoName').textContent = company.name;
+    document.getElementById('printCoMeta').textContent =
+      `RFC: ${company.rfc}\n${company.fiscalRegime || ''}\n${company.address}${company.phone ? '\nTel: ' + company.phone : ''}`;
+    document.getElementById('printStatus').textContent = '● ' + fmt.statusLabel(fresh.status);
+    document.getElementById('printDates').textContent =
+      `Emisión: ${fmt.date(fresh.issueDate)}\nVencimiento: ${fmt.date(fresh.dueDate)}`;
+
+    // Header
+    document.getElementById('invType').textContent = fresh.type === 'emitted' ? 'Factura emitida · CFDI' : 'Factura recibida · CFDI';
+    document.getElementById('invFolioTitle').textContent = fresh.folio;
+
+    const days = fmt.daysUntil(fresh.dueDate);
+    let subtitle = '';
+    if (fresh.status === 'paid') subtitle = 'Pagada · ' + fmt.date(fresh.dueDate);
+    else if (fresh.status === 'overdue') subtitle = `Vencida hace ${Math.abs(days)} días · ${fmt.date(fresh.dueDate)}`;
+    else if (fresh.status === 'draft') subtitle = 'Borrador — no timbrada';
+    else if (days < 0) subtitle = `Vencida hace ${Math.abs(days)} días`;
+    else if (days === 0) subtitle = 'Vence hoy';
+    else subtitle = `Vence en ${days} días · ${fmt.date(fresh.dueDate)}`;
+    document.getElementById('invSubtitle').textContent = subtitle;
+
+    // Top actions
+    const topHtml = [];
+    if (fresh.status === 'draft') {
+      topHtml.push(`<button class="btn btn-secondary btn-sm" onclick="deleteInvoice()">Eliminar</button>`);
+      topHtml.push(`<button class="btn btn-primary btn-sm" onclick="emitInvoice()">Emitir factura</button>`);
+    } else {
+      topHtml.push(`<button class="btn btn-secondary btn-sm" onclick="downloadInvoice('xml')">Descargar XML</button>`);
+      topHtml.push(`<button class="btn btn-secondary btn-sm" onclick="downloadInvoice('pdf')">Descargar PDF</button>`);
+    }
+    document.getElementById('topActions').innerHTML = topHtml.join('');
+
+    // Stat summary
+    const paid = Store.all('payments').filter(p => p.invoiceId === fresh.id).reduce((s, p) => s + p.amount, 0);
+    const pending = Math.max(0, fresh.total - paid);
+    document.getElementById('statSummary').innerHTML = `
+      <div class="stat-item"><div class="l">Total</div><div class="v">${fmt.mxn(fresh.total)}</div></div>
+      <div class="stat-item"><div class="l">Pagado</div><div class="v" style="color: var(--success);">${fmt.mxn(paid)}</div></div>
+      <div class="stat-item"><div class="l">Por cobrar</div><div class="v" style="color: ${pending > 0 ? 'var(--ochre)' : 'var(--stone)'};">${fmt.mxn(pending)}</div></div>`;
+
+    // Invoice document
+    const statColors = {
+      paid: { bg: 'rgba(47, 125, 79, 0.12)', color: '#2F7D4F' },
+      overdue: { bg: 'rgba(169, 58, 43, 0.12)', color: '#A93A2B' },
+      pending: { bg: 'rgba(184, 98, 46, 0.12)', color: '#B8622E' },
+      sent: { bg: 'rgba(58, 107, 140, 0.12)', color: '#3A6B8C' },
+      draft: { bg: 'rgba(107, 107, 94, 0.12)', color: '#6B6B5E' },
+      cancelled: { bg: 'rgba(107, 107, 94, 0.12)', color: '#6B6B5E' }
+    };
+    const sc = statColors[fresh.status] || statColors.draft;
+
+    const receiverBlock = fresh.type === 'emitted' ? `
+      <div class="inv-party">
+        <div class="label">Receptor (Cliente)</div>
+        <div class="name">${client?.name || '—'}</div>
+        <div class="meta">
+          RFC: ${client?.rfc || '—'}<br>
+          ${client?.address || ''}<br>
+          ${client?.email || ''}${client?.phone ? '<br>Tel: ' + client.phone : ''}
+        </div>
+      </div>` : `
+      <div class="inv-party">
+        <div class="label">Proveedor</div>
+        <div class="name">${fresh.supplierName || '—'}</div>
+        <div class="meta">Factura recibida de un tercero</div>
+      </div>`;
+
+    const emitterBlock = fresh.type === 'emitted' ? `
+      <div class="inv-party">
+        <div class="label">Emisor</div>
+        <div class="name">${company.name}</div>
+        <div class="meta">RFC: ${company.rfc}<br>${company.fiscalRegime || company.regimenFiscal || ''}<br>${company.address}${company.phone ? '<br>Tel: ' + company.phone : ''}</div>
+      </div>` : `
+      <div class="inv-party">
+        <div class="label">Receptor</div>
+        <div class="name">${company.name}</div>
+        <div class="meta">RFC: ${company.rfc}<br>${company.fiscalRegime || ''}<br>${company.address}${company.phone ? '<br>Tel: ' + company.phone : ''}</div>
+      </div>`;
+
+    const metodo = fresh.metodoPago || fresh.paymentMethod || 'PUE';
+    const timbrado = (fresh.status !== 'draft' && fresh.status !== 'cancelled');
+    const uuid = timbrado ? (fresh.uuid || demoUUID(fresh.folio)) : null;
+    const fechaTimbrado = timbrado ? (fresh.fechaTimbrado || fresh.issueDate + 'T12:00:00') : null;
+
+    document.getElementById('invDoc').innerHTML = `
+      <div class="inv-head">
+        <div>
+          <div class="label">Folio</div>
+          <div class="folio">${fresh.folio}</div>
+          <div style="margin-top: 8px;"><span class="status-hero" style="background: ${sc.bg}; color: ${sc.color};">● ${fmt.statusLabel(fresh.status)}</span></div>
+        </div>
+        <div style="text-align: right;">
+          <div class="label">Total</div>
+          <div class="folio">${fmt.mxn(fresh.total)}</div>
+          <div style="font-family: var(--mono); font-size: 0.8rem; color: var(--stone); margin-top: 4px;">MXN · ${METODO_PAGO[metodo] || metodo}</div>
+        </div>
+      </div>
+
+      <div class="pdf-body">
+
+        <div class="inv-parties">
+          ${fresh.type === 'emitted' ? emitterBlock + receiverBlock : receiverBlock + emitterBlock}
+        </div>
+
+        <div class="pdf-meta">
+          <div class="pdf-meta-title">Datos del comprobante</div>
+          <div class="pdf-meta-grid">
+            <div><b>Método de pago:</b> ${METODO_PAGO[metodo] || metodo}</div>
+            <div><b>Forma de pago:</b> ${FORMA_PAGO[fresh.formaPago] || fresh.formaPago || '—'}</div>
+            <div><b>Uso CFDI:</b> ${CFDI_USE[fresh.cfdiUse] || fresh.cfdiUse || '—'}</div>
+            <div><b>Régimen receptor:</b> ${fresh.regimenReceptor || '—'}</div>
+            ${fresh.paymentConditions ? `<div class="full"><b>Condiciones de pago:</b> ${fresh.paymentConditions}</div>` : ''}
+            ${fresh.pedidoId ? `<div><b>ID de pedido:</b> ${fresh.pedidoId}</div>` : ''}
+            ${fresh.folioEntrega ? `<div><b>Folio de entrega:</b> ${fresh.folioEntrega}</div>` : ''}
+          </div>
+        </div>
+
+        <div class="pdf-items">
+          <table class="items-detail">
+            <thead><tr>
+              <th>Descripción</th>
+              <th class="num">Cant.</th>
+              <th class="num">P. Unit.</th>
+              <th class="num">Dto %</th>
+              <th class="num">Importe</th>
+            </tr></thead>
+            <tbody>
+              ${(fresh.items || []).map(it => {
+                const desc    = it.desc || it.description || '—';
+                const qty     = it.qty  || 1;
+                const price   = it.price  != null ? it.price  : (it.unitPrice || 0);
+                const disc    = it.discount || 0;
+                const importe = it.total   != null ? it.total  : qty * price * (1 - disc / 100);
+                const clave   = it.clave || '';
+                const unit    = it.unit  || '';
+                return `<tr>
+                  <td>${desc}${clave ? `<span class="item-clave">${clave}${unit ? ' · ' + unit : ''}</span>` : ''}</td>
+                  <td class="num">${qty}</td>
+                  <td class="num">${fmt.mxn(price)}</td>
+                  <td class="num" style="color:${disc > 0 ? 'var(--success)' : 'var(--stone)'};">${disc > 0 ? disc + '%' : '—'}</td>
+                  <td class="num">${fmt.mxn(importe)}</td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="pdf-bottom">
+          <div class="pdf-letra">
+            <div class="pdf-letra-title">Importe con letra</div>
+            <div class="pdf-letra-text">${numberToWords(fresh.total)}</div>
+          </div>
+          <div class="totals-panel">
+            <div class="totals-row"><span>Subtotal</span><span>${fmt.mxn(fresh.subtotal)}</span></div>
+            <div class="totals-row"><span>IVA (16%)</span><span>${fmt.mxn(fresh.iva)}</span></div>
+            <div class="totals-row grand"><span>Total MXN</span><span>${fmt.mxn(fresh.total)}</span></div>
+          </div>
+        </div>
+
+        ${fresh.observaciones ? `
+        <div class="pdf-obs">
+          <div class="pdf-obs-title">Observaciones</div>
+          <div class="pdf-obs-text">${fresh.observaciones}</div>
+        </div>` : ''}
+
+        ${timbrado ? `
+        <div class="pdf-sat">
+          <div class="pdf-sat-title">Sello Digital del SAT · Timbrado CFDI</div>
+          <div class="pdf-sat-grid">
+            <span class="sat-key">Folio fiscal (UUID)</span><span class="sat-val">${uuid}</span>
+            <span class="sat-key">Fecha y hora timbrado</span><span class="sat-val">${fechaTimbrado ? fechaTimbrado.replace('T',' ') : '—'}</span>
+            <span class="sat-key">No. certificado SAT</span><span class="sat-val">20001000000300022323</span>
+            <span class="sat-key">No. certificado emisor</span><span class="sat-val">20001000000100003450</span>
+            <span class="sat-key">Cadena original</span><span class="sat-val">||4.0|${uuid}|${fresh.issueDate}T12:00:00|${fresh.total}||</span>
+          </div>
+        </div>` : ''}
+
+        <div class="pdf-elaborado">
+          <span>Elaborado por: <strong>${company.name}</strong></span>
+          <span>Generado con Jobby.</span>
+        </div>
+
+        ${fresh.notes ? `<div class="inv-internal-note" style="margin-top:10px;font-size:0.82rem;color:var(--stone);"><em>Nota interna:</em> ${fresh.notes}</div>` : ''}
+
+      </div>
+    `;
+
+    // Actions list
+    const actHtml = [];
+    if (fresh.status !== 'paid' && fresh.status !== 'cancelled') {
+      actHtml.push(`<button class="btn btn-primary" onclick="markPaid()">Marcar como pagada</button>`);
+    }
+    if (fresh.type === 'emitted' && (fresh.status === 'overdue' || fresh.status === 'pending' || fresh.status === 'sent')) {
+      actHtml.push(`<button class="btn btn-secondary" onclick="sendReminder()">Enviar recordatorio</button>`);
+    }
+    actHtml.push(`<button class="btn btn-secondary" onclick="duplicateInv()">Duplicar</button>`);
+    if (fresh.status !== 'cancelled' && fresh.status !== 'paid') {
+      actHtml.push(`<button class="btn btn-secondary" onclick="cancelInv()">Cancelar</button>`);
+    }
+    actHtml.push(`<button class="btn btn-secondary" onclick="registerPayment()">Registrar pago parcial</button>`);
+    document.getElementById('actionsList').innerHTML = actHtml.join('');
+
+    // Payment history
+    const payments = Store.all('payments').filter(p => p.invoiceId === fresh.id).sort((a, b) => b.date.localeCompare(a.date));
+    document.getElementById('payHistory').innerHTML = payments.length === 0
+      ? '<p style="color: var(--stone); font-size: 0.85rem;">Aún no hay pagos registrados.</p>'
+      : payments.map(p => `<div class="pay-row">
+          <div class="top"><span>${p.method} · ${p.bank}</span><span class="amt">${fmt.mxn(p.amount)}</span></div>
+          <div class="date">${fmt.date(p.date)} · Ref ${p.reference}</div>
+        </div>`).join('');
+
+    // Activity
+    const activity = Store.all('activity').filter(a => a.entity === fresh.folio).slice(0, 8);
+    document.getElementById('activityList').innerHTML = activity.length === 0
+      ? '<p style="color: var(--stone); font-size: 0.85rem;">Sin actividad registrada.</p>'
+      : activity.map(a => {
+          const u = Store.find('users', a.user);
+          return `<div class="activity-item">
+            <div class="act">${a.action}</div>
+            <div class="who">${u?.name || '—'} · ${fmt.relative(a.date)}</div>
+          </div>`;
+        }).join('');
+  }
+
+  window.markPaid = () => {
+    const fresh = Store.find('invoices', id);
+    const alreadyPaid = Store.all('payments').filter(p => p.invoiceId === fresh.id).reduce((s, p) => s + p.amount, 0);
+    const pending = fresh.total - alreadyPaid;
+    if (pending <= 0) { toast('La factura ya está pagada en su totalidad', 'info'); return; }
+
+    Store.update('invoices', id, { status: 'paid' });
+    Store.add('payments', {
+      invoiceId: id,
+      date: new Date().toISOString().slice(0, 10),
+      amount: pending,
+      method: 'Transferencia',
+      reference: 'MANUAL-' + Date.now(),
+      bank: 'BBVA'
+    });
+    Store.logActivity('Marcó como pagada', fresh.folio);
+    toast(`Factura ${fresh.folio} marcada como pagada`);
+    render();
+  };
+
+  window.registerPayment = () => {
+    const fresh = Store.find('invoices', id);
+    const alreadyPaid = Store.all('payments').filter(p => p.invoiceId === fresh.id).reduce((s, p) => s + p.amount, 0);
+    const pending = fresh.total - alreadyPaid;
+
+    Modal.open(`
+      <div class="modal-head">
+        <div><h3>Registrar pago</h3><div class="sub">Factura ${fresh.folio} · pendiente ${fmt.mxn(pending)}</div></div>
+        <button class="modal-close" onclick="Jobby.Modal.close()">✕</button>
+      </div>
+      <div class="form-row">
+        <div class="form-field"><label>Monto MXN</label><input type="number" id="mAmount" value="${pending.toFixed(2)}" step="0.01"></div>
+        <div class="form-field"><label>Fecha</label><input type="date" id="mDate" value="${new Date().toISOString().slice(0, 10)}"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-field"><label>Método</label>
+          <select id="mMethod"><option>Transferencia</option><option>Cheque</option><option>Efectivo</option><option>Tarjeta</option></select></div>
+        <div class="form-field"><label>Banco</label>
+          <select id="mBank"><option>BBVA</option><option>Santander</option><option>Banorte</option><option>HSBC</option><option>N/A</option></select></div>
+      </div>
+      <div class="form-row full">
+        <div class="form-field"><label>Referencia</label><input type="text" id="mRef" placeholder="Número de transferencia, cheque, etc."></div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-ghost btn-sm" onclick="Jobby.Modal.close()">Cancelar</button>
+        <button class="btn btn-primary btn-sm" onclick="confirmPayment('${id}')">Registrar</button>
+      </div>`);
+  };
+
+  window.confirmPayment = (invId) => {
+    const amount = +document.getElementById('mAmount').value;
+    if (!amount || amount <= 0) { toast('Monto inválido', 'error'); return; }
+
+    const fresh = Store.find('invoices', invId);
+    Store.add('payments', {
+      invoiceId: invId,
+      date: document.getElementById('mDate').value,
+      amount,
+      method: document.getElementById('mMethod').value,
+      reference: document.getElementById('mRef').value || 'MANUAL-' + Date.now(),
+      bank: document.getElementById('mBank').value
+    });
+
+    const totalPaid = Store.all('payments').filter(p => p.invoiceId === invId).reduce((s, p) => s + p.amount, 0);
+    if (totalPaid >= fresh.total - 0.01) {
+      Store.update('invoices', invId, { status: 'paid' });
+    }
+
+    Store.logActivity('Registró pago de ' + fmt.mxn(amount), fresh.folio);
+    Modal.close();
+    toast(`Pago de ${fmt.mxn(amount)} registrado`);
+    render();
+  };
+
+  window.sendReminder = () => {
+    const fresh = Store.find('invoices', id);
+    Store.logActivity('Envió recordatorio', fresh.folio);
+    toast(`Recordatorio enviado por correo y WhatsApp`);
+    render();
+  };
+
+  window.duplicateInv = () => {
+    const fresh = Store.find('invoices', id);
+    const maxFolio = Math.max(...Store.all('invoices').filter(i => i.folio.startsWith('A-')).map(i => +i.folio.slice(2)));
+    const newFolio = 'A-' + (maxFolio + 1);
+    const newInv = { ...fresh, id: 'inv_' + newFolio, folio: newFolio, status: 'draft',
+      issueDate: new Date().toISOString().slice(0, 10),
+      dueDate: addDays(new Date().toISOString().slice(0, 10), 30) };
+    Store.add('invoices', newInv);
+    Store.logActivity('Duplicó factura', newFolio);
+    toast(`Factura duplicada como ${newFolio}`);
+    setTimeout(() => location.href = 'factura-detalle.html?id=' + newInv.id, 600);
+  };
+
+  window.cancelInv = () => {
+    if (confirm('¿Cancelar esta factura? Debe reportarse al SAT.')) {
+      Store.update('invoices', id, { status: 'cancelled' });
+      Store.logActivity('Canceló factura', Store.find('invoices', id).folio);
+      toast('Factura cancelada', 'error');
+      render();
+    }
+  };
+
+  window.deleteInvoice = () => {
+    if (confirm('¿Eliminar este borrador? No se puede deshacer.')) {
+      const fresh = Store.find('invoices', id);
+      Store.remove('invoices', id);
+      Store.logActivity('Eliminó borrador', fresh.folio);
+      toast('Borrador eliminado', 'error');
+      setTimeout(() => location.href = 'facturas.html', 500);
+    }
+  };
+
+  window.emitInvoice = () => {
+    Store.update('invoices', id, { status: 'sent' });
+    Store.logActivity('Emitió factura', Store.find('invoices', id).folio);
+    toast('Factura emitida y enviada al cliente');
+    render();
+  };
+
+  window.downloadInvoice = (format) => {
+    const fresh = Store.find('invoices', id);
+    if (format === 'xml') {
+      const recep = fresh.clientId ? Store.find('clients', fresh.clientId) : null;
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<cfdi:Comprobante Version="4.0" Folio="${fresh.folio}" Fecha="${fresh.issueDate}T12:00:00" Total="${fresh.total}" SubTotal="${fresh.subtotal}" Moneda="MXN" TipoDeComprobante="I" MetodoPago="${fresh.metodoPago || fresh.paymentMethod || 'PUE'}" FormaPago="${fresh.formaPago || '03'}">
+  <cfdi:Emisor Rfc="${Store.company.rfc}" Nombre="${Store.company.name}" RegimenFiscal="${Store.company.regimenFiscal || '601'}"/>
+  <cfdi:Receptor Rfc="${recep?.rfc || 'XAXX010101000'}" Nombre="${recep?.name || ''}" UsoCFDI="${fresh.cfdiUse || 'G03'}" RegimenFiscalReceptor="${fresh.regimenReceptor || '601'}" DomicilioFiscalReceptor="64000"/>
+  <cfdi:Conceptos>
+${(fresh.items || []).map(i => {
+  const desc  = i.desc || i.description || '';
+  const qty   = i.qty  || 1;
+  const price = i.price != null ? i.price : (i.unitPrice || 0);
+  const disc  = i.discount || 0;
+  const imp   = i.total != null ? i.total : qty * price * (1 - disc/100);
+  return `    <cfdi:Concepto ClaveProdServ="${i.clave || '01010101'}" ClaveUnidad="${i.unit || 'E48'}" Descripcion="${desc}" Cantidad="${qty}" ValorUnitario="${price.toFixed(6)}" Importe="${imp.toFixed(6)}"${disc > 0 ? ` Descuento="${(qty*price*disc/100).toFixed(6)}"` : ''}/>`;
+}).join('\n')}
+  </cfdi:Conceptos>
+  <cfdi:Impuestos TotalImpuestosTrasladados="${fresh.iva}"/>
+</cfdi:Comprobante>`;
+      const blob = new Blob([xml], { type: 'application/xml' });
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+      a.download = fresh.folio + '.xml'; a.click();
+      toast('XML descargado');
+    } else {
+      const title = document.title;
+      document.title = fresh.folio;
+      window.print();
+      document.title = title;
+    }
+  };
+})();
+</script>
+<script src="demo-aviso.js"></script>
+</body>
+</html>

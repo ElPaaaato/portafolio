@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FHO Servicios — Tu Socio de Negocio</title>
+<link rel="icon" type="image/png" href="fho-logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400&family=Outfit:wght@200;300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<style>
+  /* ───── HERO ───── */
+  .hero{
+    min-height:100vh;display:grid;place-items:center;
+    position:relative;padding:160px 56px 100px;z-index:2;
+  }
+  .hero-inner{max-width:1200px;width:100%;text-align:center;position:relative}
+  .eyebrow{
+    display:inline-flex;align-items:center;gap:14px;
+    font-size:.85rem;letter-spacing:.4em;text-transform:uppercase;
+    color:var(--gold);margin-bottom:36px;
+    opacity:0;animation:rise .9s .2s forwards;
+  }
+  .eyebrow::before,.eyebrow::after{
+    content:'';width:32px;height:1px;background:var(--gold);
+  }
+  h1{
+    font-family:'Fraunces',serif;
+    font-size:clamp(3.2rem,8vw,7rem);
+    line-height:.98;font-weight:300;letter-spacing:-.02em;
+    margin-bottom:36px;
+    opacity:0;animation:rise 1s .4s forwards;
+  }
+  h1 .italic{font-style:italic;color:var(--gold);font-weight:400}
+  h1 .accent{
+    background:linear-gradient(120deg,var(--gold-bright),var(--gold) 60%,var(--gold-deep));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    font-style:italic;
+  }
+  .hero-sub{
+    max-width:720px;margin:0 auto 52px;
+    color:var(--ink-soft);font-size:1.3rem;font-weight:300;
+    opacity:0;animation:rise 1s .65s forwards;
+  }
+  .hero-actions{
+    display:flex;gap:18px;justify-content:center;flex-wrap:wrap;
+    opacity:0;animation:rise 1s .85s forwards;
+  }
+  .ornament{
+    position:absolute;border:1px solid var(--line);
+    border-radius:50%;pointer-events:none;
+  }
+  .ornament.o1{width:560px;height:560px;top:50%;left:50%;
+    transform:translate(-50%,-50%);
+    animation:spin 60s linear infinite;}
+  .ornament.o2{width:760px;height:760px;top:50%;left:50%;
+    transform:translate(-50%,-50%);
+    border-style:dashed;border-color:rgba(224,168,90,.08);
+    animation:spin 90s linear infinite reverse;}
+  .scroll-cue{
+    position:absolute;bottom:40px;left:50%;transform:translateX(-50%);
+    color:var(--ink-mute);font-size:.78rem;letter-spacing:.4em;
+    text-transform:uppercase;display:flex;flex-direction:column;
+    align-items:center;gap:14px;opacity:0;animation:rise 1s 1.2s forwards;
+  }
+  .scroll-cue .line{
+    width:1px;height:40px;background:linear-gradient(to bottom,var(--gold),transparent);
+    animation:drop 2s ease-in-out infinite;
+  }
+  @keyframes drop{0%,100%{transform:scaleY(.3);transform-origin:top}50%{transform:scaleY(1)}}
+
+  /* ───── ABOUT preview ───── */
+  .about{padding:140px 56px;position:relative}
+  .about-grid{
+    max-width:1240px;margin:0 auto;
+    display:grid;grid-template-columns:1fr 1fr;gap:90px;align-items:center;
+  }
+  .about-visual{
+    position:relative;aspect-ratio:1/1;
+    border-radius:8px;overflow:hidden;
+    background:linear-gradient(135deg,var(--bg-2),var(--bg-1));
+    border:1px solid var(--line-soft);
+  }
+  .about-visual::before{
+    content:'';position:absolute;inset:0;
+    background:
+      radial-gradient(circle at 30% 30%, rgba(224,168,90,.2), transparent 50%),
+      radial-gradient(circle at 70% 70%, rgba(100,140,220,.13), transparent 50%);
+  }
+  .stat-grid{
+    position:absolute;inset:0;display:grid;
+    grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;
+  }
+  .stat{
+    display:flex;flex-direction:column;justify-content:center;align-items:center;
+    border-right:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft);
+    padding:24px;text-align:center;
+    transition:background .4s ease;
+  }
+  .stat:nth-child(2),.stat:nth-child(4){border-right:none}
+  .stat:nth-child(3),.stat:nth-child(4){border-bottom:none}
+  .stat:hover{background:rgba(224,168,90,.07)}
+  .stat-num{
+    font-family:'Fraunces',serif;font-size:3.6rem;font-weight:300;
+    color:var(--gold);line-height:1;
+  }
+  .stat-num span{font-size:1.5rem;vertical-align:super}
+  .stat-label{
+    margin-top:12px;font-size:.85rem;letter-spacing:.18em;
+    text-transform:uppercase;color:var(--ink-soft);
+  }
+  .about-text h2{
+    font-family:'Fraunces',serif;font-weight:300;
+    font-size:clamp(2.4rem,4vw,3.4rem);line-height:1.1;
+    margin-bottom:32px;letter-spacing:-.01em;
+  }
+  .about-text h2 em{color:var(--gold);font-weight:400;font-style:italic}
+  .about-text p{color:var(--ink-soft);margin-bottom:20px;font-size:1.15rem}
+  .pillars{
+    margin-top:40px;display:flex;flex-direction:column;gap:14px;
+  }
+  .pillar{
+    display:flex;align-items:center;gap:14px;
+    padding:16px 0;border-top:1px solid var(--line-soft);
+    font-size:1.05rem;
+  }
+  .pillar:last-child{border-bottom:1px solid var(--line-soft)}
+  .pillar-dot{
+    width:9px;height:9px;border-radius:50%;background:var(--gold);
+    box-shadow:0 0 12px var(--gold);flex-shrink:0;
+  }
+
+  /* ───── CTA strip ───── */
+  .cta-strip{
+    padding:120px 56px;text-align:center;
+    border-top:1px solid var(--line-soft);
+    position:relative;z-index:2;
+  }
+  .cta-strip h3{
+    font-family:'Fraunces',serif;font-weight:300;
+    font-size:clamp(2rem,4vw,3rem);line-height:1.1;
+    margin-bottom:28px;
+  }
+  .cta-strip h3 em{color:var(--gold);font-style:italic;font-weight:400}
+  .cta-strip p{color:var(--ink-soft);font-size:1.15rem;max-width:580px;margin:0 auto 36px}
+
+  @media (max-width:900px){
+    .hero{padding:130px 24px 80px}
+    .about{padding:90px 24px}
+    .about-grid{grid-template-columns:1fr;gap:50px}
+    .cta-strip{padding:80px 24px}
+    .ornament{display:none}
+  }
+</style>
+</head>
+<body>
+
+<div class="mesh"></div>
+<canvas id="particles"></canvas>
+<div class="grain"></div>
+
+<nav id="nav">
+  <a href="index.html" class="brand">
+    <div class="brand-mark"><img src="fho-logo.png" alt="FHO Servicios"></div>
+    <div class="brand-text">FHO <span>Servicios</span></div>
+  </a>
+  <div class="nav-links">
+    <a href="index.html" class="active">Inicio</a>
+    <a href="servicios.html">Servicios</a>
+    <a href="portafolio.html">Portafolio</a>
+    <a href="contacto.html" class="nav-cta show-mobile">Contacto</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="ornament o1"></div>
+  <div class="ornament o2"></div>
+  <div class="hero-inner">
+    <div class="eyebrow">Consultoría Estratégica · Desde México</div>
+    <h1>
+      Tu <span class="italic">socio</span><br>
+      de <span class="accent">negocio</span>
+    </h1>
+    <p class="hero-sub">
+      Impulsamos la institucionalización, profesionalización y crecimiento
+      de tu empresa con un servicio integral, confiable y profundamente humano.
+    </p>
+    <div class="hero-actions">
+      <a href="servicios.html" class="btn btn-primary">
+        Explorar servicios
+        <svg class="arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </a>
+      <a href="contacto.html" class="btn btn-ghost">Hablemos</a>
+    </div>
+  </div>
+  <div class="scroll-cue">
+    <span>Descubre</span>
+    <div class="line"></div>
+  </div>
+</section>
+
+<section class="about">
+  <div class="about-grid">
+    <div class="about-visual reveal">
+      <div class="stat-grid">
+        <div class="stat"><div class="stat-num">+20<span>a</span></div><div class="stat-label">De experiencia</div></div>
+        <div class="stat"><div class="stat-num">100<span>%</span></div><div class="stat-label">Personalizado</div></div>
+        <div class="stat"><div class="stat-num">2</div><div class="stat-label">Sedes en México</div></div>
+        <div class="stat"><div class="stat-num">9</div><div class="stat-label">Áreas de servicio</div></div>
+      </div>
+    </div>
+    <div class="about-text reveal">
+      <span class="section-eyebrow">Quiénes somos</span>
+      <h2>Una firma orientada a <em>satisfacer</em> las necesidades de tu organización</h2>
+      <p>
+        En FHO Servicios nos dedicamos a contribuir en la competitividad y rentabilidad
+        de nuestros clientes, otorgando servicios de alta calidad, flexibles y con una
+        atención cercana y personalizada.
+      </p>
+      <p>
+        Trabajamos hombro a hombro con líderes empresariales para transformar
+        organizaciones desde su capital humano.
+      </p>
+      <div class="pillars">
+        <div class="pillar"><div class="pillar-dot"></div>Servicio integral, confiable y especializado</div>
+        <div class="pillar"><div class="pillar-dot"></div>Enfoque en institucionalización y crecimiento</div>
+        <div class="pillar"><div class="pillar-dot"></div>Atención personalizada para cada cliente</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="cta-strip reveal">
+  <h3>Listo para dar el <em>siguiente paso</em>?</h3>
+  <p>Conoce los servicios diseñados para llevar a tu organización al siguiente nivel.</p>
+  <a href="servicios.html" class="btn btn-primary">
+    Ver todos los servicios
+    <svg class="arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+  </a>
+</section>
+
+<footer>
+  <div class="footer-brand">FHO Servicios</div>
+  <div class="footer-divider"></div>
+  <div class="footer-text">© 2026 FHO Servicios, S.A. de C.V. — Todos los derechos reservados.</div>
+  <div class="footer-meta">
+    <a href="tel:+528112975182">Tel. (81) 12-97-51-82</a>
+    <a href="https://wa.me/528182871380">WhatsApp 818-287-13-80</a>
+    <a href="mailto:info@fhoservicios.com">info@fhoservicios.com</a>
+  </div>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>

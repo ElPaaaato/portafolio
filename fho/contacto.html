@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Contacto — FHO Servicios</title>
+<link rel="icon" type="image/png" href="fho-logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400&family=Outfit:wght@200;300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<style>
+  .contact{padding:40px 56px 120px;position:relative}
+  .contact-grid{
+    max-width:1240px;margin:0 auto;
+    display:grid;grid-template-columns:1.1fr 1fr;gap:60px;
+  }
+  .contact-form{
+    background:linear-gradient(180deg,var(--bg-1),var(--bg-2));
+    border:1px solid var(--line-soft);
+    border-radius:18px;padding:52px;
+    position:relative;overflow:hidden;
+  }
+  .contact-form::before{
+    content:'';position:absolute;top:-100px;right:-100px;
+    width:300px;height:300px;border-radius:50%;
+    background:radial-gradient(circle, rgba(224,168,90,.18), transparent 70%);
+  }
+  .form-title{
+    font-family:'Fraunces',serif;font-weight:300;
+    font-size:2rem;margin-bottom:10px;
+  }
+  .form-sub{color:var(--ink-soft);margin-bottom:40px;font-size:1.05rem}
+  .field{margin-bottom:26px;position:relative}
+  .field label{
+    display:block;font-size:.78rem;letter-spacing:.18em;
+    text-transform:uppercase;color:var(--ink-mute);margin-bottom:10px;
+  }
+  .field input, .field textarea{
+    width:100%;padding:15px 0;background:transparent;
+    border:none;border-bottom:1px solid var(--line-soft);
+    color:var(--ink);font-family:inherit;font-size:1.05rem;
+    transition:border-color .3s ease;outline:none;
+  }
+  .field textarea{resize:vertical;min-height:100px}
+  .field input:focus, .field textarea:focus{border-color:var(--gold)}
+  .field input::placeholder, .field textarea::placeholder{color:var(--ink-mute);opacity:.6}
+  .submit-btn{
+    width:100%;margin-top:14px;padding:20px;
+    background:var(--gold);color:var(--bg-0);
+    border:none;border-radius:100px;cursor:pointer;
+    font-family:inherit;font-size:1rem;font-weight:500;
+    letter-spacing:.13em;text-transform:uppercase;
+    transition:all .3s ease;
+    display:flex;align-items:center;justify-content:center;gap:10px;
+  }
+  .submit-btn:hover{background:var(--gold-bright);box-shadow:var(--shadow-gold)}
+
+  .contact-info{display:flex;flex-direction:column;gap:24px}
+  .info-block{
+    padding:32px;border:1px solid var(--line-soft);border-radius:16px;
+    transition:all .4s ease;
+    background:rgba(34,40,56,.4);
+  }
+  .info-block:hover{
+    border-color:var(--line);
+    transform:translateY(-3px);
+    background:rgba(34,40,56,.7);
+  }
+  .info-icon{
+    width:46px;height:46px;border-radius:12px;
+    background:rgba(224,168,90,.12);color:var(--gold);
+    display:grid;place-items:center;margin-bottom:20px;
+  }
+  .info-icon svg{width:22px;height:22px;stroke-width:1.6}
+  .info-label{
+    font-size:.78rem;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--ink-mute);margin-bottom:10px;
+  }
+  .info-value{font-size:1.05rem;color:var(--ink);line-height:1.6}
+  .info-value a{color:var(--ink);text-decoration:none;transition:color .2s ease}
+  .info-value a:hover{color:var(--gold)}
+
+  .map-section{
+    max-width:1240px;margin:0 auto;padding:0 56px 120px;
+    position:relative;z-index:2;
+  }
+  .map-section h3{
+    font-family:'Fraunces',serif;font-weight:300;
+    font-size:2.2rem;margin-bottom:32px;text-align:center;
+  }
+  .map-section h3 em{color:var(--gold);font-style:italic;font-weight:400}
+  .map-grid{
+    display:grid;grid-template-columns:1fr 1fr;gap:24px;
+  }
+  .map-card{
+    background:var(--bg-1);border:1px solid var(--line-soft);
+    border-radius:16px;overflow:hidden;
+    transition:all .4s ease;
+  }
+  .map-card:hover{border-color:var(--line);transform:translateY(-4px)}
+  .map-card iframe{width:100%;height:280px;border:none;display:block;filter:grayscale(.3) brightness(.85)}
+  .map-info{padding:24px 28px}
+  .map-city{
+    font-family:'Fraunces',serif;font-style:italic;
+    color:var(--gold);font-size:1.4rem;margin-bottom:8px;
+  }
+  .map-addr{color:var(--ink-soft);font-size:.95rem;line-height:1.5}
+
+  @media (max-width:900px){
+    .contact{padding:20px 24px 80px}
+    .contact-grid{grid-template-columns:1fr;gap:40px}
+    .contact-form{padding:36px 28px}
+    .map-section{padding:0 24px 80px}
+    .map-grid{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+
+<div class="mesh"></div>
+<canvas id="particles"></canvas>
+<div class="grain"></div>
+
+<nav id="nav">
+  <a href="index.html" class="brand">
+    <div class="brand-mark"><img src="fho-logo.png" alt="FHO Servicios"></div>
+    <div class="brand-text">FHO <span>Servicios</span></div>
+  </a>
+  <div class="nav-links">
+    <a href="index.html">Inicio</a>
+    <a href="servicios.html">Servicios</a>
+    <a href="portafolio.html">Portafolio</a>
+    <a href="contacto.html" class="nav-cta active show-mobile">Contacto</a>
+  </div>
+</nav>
+
+<header class="page-header">
+  <div class="page-eyebrow">Hablemos</div>
+  <h1 class="page-title">Conversemos sobre tu <em>siguiente paso</em></h1>
+  <p class="page-desc">
+    Cuéntanos qué necesitas y te responderemos en menos de 24 horas hábiles.
+    Una conversación puede ser el inicio de una transformación.
+  </p>
+</header>
+
+<section class="contact">
+  <div class="contact-grid">
+    <form class="contact-form reveal" onsubmit="event.preventDefault(); this.querySelector('.submit-btn').textContent='Mensaje enviado ✓';">
+      <h3 class="form-title">Escríbenos</h3>
+      <p class="form-sub">Es el primer paso para una colaboración estratégica.</p>
+
+      <div class="field"><label>Nombre completo</label><input type="text" placeholder="¿Cómo te llamas?" required></div>
+      <div class="field"><label>Empresa</label><input type="text" placeholder="Nombre de tu organización"></div>
+      <div class="field"><label>Correo electrónico</label><input type="email" placeholder="tu@empresa.com" required></div>
+      <div class="field"><label>Teléfono</label><input type="tel" placeholder="(81) 0000 0000"></div>
+      <div class="field"><label>Cuéntanos tu proyecto</label><textarea placeholder="¿En qué podemos ayudarte?"></textarea></div>
+      <button type="submit" class="submit-btn">
+        Enviar mensaje
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </button>
+    </form>
+
+    <div class="contact-info">
+      <div class="info-block reveal">
+        <div class="info-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.37 1.9.72 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.35 1.85.59 2.81.72A2 2 0 0 1 22 16.92z"/></svg></div>
+        <div class="info-label">Teléfono · WhatsApp</div>
+        <div class="info-value">
+          <a href="tel:+528112975182">Tel. (81) 12-97-51-82</a><br>
+          <a href="https://wa.me/528182871380">WhatsApp 818-287-13-80</a>
+        </div>
+      </div>
+
+      <div class="info-block reveal">
+        <div class="info-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
+        <div class="info-label">Correo electrónico</div>
+        <div class="info-value"><a href="mailto:info@fhoservicios.com">info@fhoservicios.com</a></div>
+      </div>
+
+      <div class="info-block reveal">
+        <div class="info-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
+        <div class="info-label">Horario de atención</div>
+        <div class="info-value">Lunes a viernes<br>9:00 a 18:00 hrs.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="map-section">
+  <h3>Nuestras <em>oficinas</em></h3>
+  <div class="map-grid">
+    <div class="map-card reveal">
+      <iframe src="https://www.google.com/maps?q=Reforma+131,+Centro,+San+Pedro+Garza+Garcia,+NL&output=embed" loading="lazy"></iframe>
+      <div class="map-info">
+        <div class="map-city">Monterrey</div>
+        <div class="map-addr">Reforma 131-6, Centro,<br>San Pedro Garza García, N.L.</div>
+      </div>
+    </div>
+    <div class="map-card reveal">
+      <iframe src="https://www.google.com/maps?q=Nebbiolo+56,+Residencial+Vinas+del+Mar,+Tijuana,+BC&output=embed" loading="lazy"></iframe>
+      <div class="map-info">
+        <div class="map-city">Tijuana</div>
+        <div class="map-addr">Valle de Guadalupe, Nebbiolo 56,<br>Residencial Viñas del Mar, 22564 Tijuana, B.C.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-brand">FHO Servicios</div>
+  <div class="footer-divider"></div>
+  <div class="footer-text">© 2026 FHO Servicios, S.A. de C.V. — Todos los derechos reservados.</div>
+  <div class="footer-meta">
+    <a href="tel:+528112975182">Tel. (81) 12-97-51-82</a>
+    <a href="https://wa.me/528182871380">WhatsApp 818-287-13-80</a>
+    <a href="mailto:info@fhoservicios.com">info@fhoservicios.com</a>
+  </div>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pagos · Jobby</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+  .sum-card { background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-md); padding: 16px 20px; }
+  .sum-card.hero { background: var(--ink); color: var(--cream); border-color: var(--ink); }
+  .sum-card .l { font-family: var(--mono); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--stone); margin-bottom: 6px; }
+  .sum-card.hero .l { color: var(--amber); }
+  .sum-card .v { font-family: var(--serif); font-size: 1.4rem; font-variant-numeric: tabular-nums; color: var(--ink); }
+  .sum-card.hero .v { color: var(--cream); }
+  .sum-card .sub { font-family: var(--mono); font-size: 0.72rem; color: var(--stone); margin-top: 4px; }
+  .sum-card.hero .sub { color: rgba(244, 239, 228, 0.6); }
+  .group-head { display: flex; justify-content: space-between; align-items: baseline; padding: 14px 0; margin-top: 20px; border-bottom: 1px solid var(--line); margin-bottom: 10px; }
+  .group-head h3 { font-family: var(--serif); font-size: 1.2rem; }
+  .group-head .meta { font-family: var(--mono); font-size: 0.82rem; color: var(--stone); }
+  .group-head .meta .amt { color: var(--ink); font-weight: 500; }
+  .pay-row { display: grid; grid-template-columns: 100px 1fr 130px 140px 100px 160px; gap: 16px; align-items: center; padding: 14px 18px; background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-md); margin-bottom: 8px; cursor: pointer; transition: all 120ms; }
+  .pay-row:hover { border-color: var(--ink); transform: translateX(2px); }
+  .pay-row .folio { font-family: var(--mono); font-size: 0.88rem; color: var(--ink); }
+  .pay-row .who { font-size: 0.92rem; color: var(--ink); }
+  .pay-row .who .rfc { font-family: var(--mono); font-size: 0.76rem; color: var(--stone); margin-top: 2px; }
+  .pay-row .due { font-family: var(--mono); font-size: 0.82rem; color: var(--slate); }
+  .pay-row .status { font-family: var(--mono); font-size: 0.78rem; }
+  .pay-row .amt { font-family: var(--mono); font-weight: 500; text-align: right; font-variant-numeric: tabular-nums; color: var(--ink); }
+  .pay-row .act { display: flex; gap: 6px; justify-content: flex-end; }
+  .pay-row .act button { padding: 4px 10px; font-size: 0.78rem; }
+  .tab-head { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 20px; }
+  .pay-tab { background: transparent; border: 0; padding: 14px 22px; font-family: var(--sans); font-size: 1rem; color: var(--stone); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .pay-tab.active { color: var(--ink); border-bottom-color: var(--ochre); font-weight: 500; }
+  @media (max-width: 900px) {
+    .pay-row { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .summary-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <aside class="sidebar"></aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="title">
+        <div class="eyebrow">Tesorería</div>
+        <h1 style="margin-top: 8px;">Pagos pendientes</h1>
+        <p>Cuentas por cobrar y por pagar, agrupadas por antigüedad de vencimiento.</p>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn btn-secondary btn-sm" onclick="reconcile()">Conciliar bancos</button>
+        <button class="btn btn-primary btn-sm" onclick="openPayModal(null)">+ Registrar pago</button>
+      </div>
+    </div>
+
+    <div class="tab-head">
+      <button class="pay-tab active" data-t="receivable">Por cobrar <span style="font-family: var(--mono); font-size: 0.78rem; color: var(--stone);" id="rCount"></span></button>
+      <button class="pay-tab" data-t="payable">Por pagar <span style="font-family: var(--mono); font-size: 0.78rem; color: var(--stone);" id="pCount"></span></button>
+      <button class="pay-tab" data-t="historial">Historial <span style="font-family: var(--mono); font-size: 0.78rem; color: var(--stone);" id="hCount"></span></button>
+    </div>
+
+    <div class="summary-grid" id="summary"></div>
+
+    <div id="listEl"></div>
+  </main>
+</div>
+
+<script src="app.js"></script>
+<script>
+(function () {
+  const { Store, Calc, fmt, mountSidebar, toast, Modal } = Jobby;
+  mountSidebar('pagos');
+
+  let tab = 'receivable';
+
+  document.querySelectorAll('.pay-tab').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('.pay-tab').forEach(t => t.classList.remove('active'));
+    b.classList.add('active');
+    tab = b.dataset.t;
+    render();
+  }));
+
+  function render() {
+    const emitted  = Store.all('invoices').filter(i => i.type === 'emitted'  && (i.status === 'pending' || i.status === 'sent' || i.status === 'overdue'));
+    const received = Store.all('invoices').filter(i => i.type === 'received' && (i.status === 'pending' || i.status === 'sent' || i.status === 'overdue'));
+    const allPays  = Store.all('payments');
+
+    document.getElementById('rCount').textContent = `(${emitted.length})`;
+    document.getElementById('pCount').textContent = `(${received.length})`;
+    document.getElementById('hCount').textContent = `(${allPays.length})`;
+
+    if (tab === 'historial') { renderHistorialSummary(allPays); renderHistorial(allPays); return; }
+    const list = tab === 'receivable' ? emitted : received;
+    renderSummary(list);
+    renderList(list);
+  }
+
+  function renderSummary(list) {
+    const total      = list.reduce((s, i) => s + i.total, 0);
+    const overdue    = list.filter(i => i.status === 'overdue');
+    const overdueAmt = overdue.reduce((s, i) => s + i.total, 0);
+    const avgDays    = list.length > 0 ? Math.round(list.reduce((s, i) => s + Math.abs(fmt.daysUntil(i.dueDate) || 0), 0) / list.length) : 0;
+
+    document.getElementById('summary').innerHTML = `
+      <div class="sum-card hero">
+        <div class="l">${tab === 'receivable' ? 'Total por cobrar' : 'Total por pagar'}</div>
+        <div class="v">${fmt.mxn(total)}</div>
+        <div class="sub">${list.length} facturas</div>
+      </div>
+      <div class="sum-card">
+        <div class="l">${tab === 'receivable' ? 'Vencido' : 'Pagos vencidos'}</div>
+        <div class="v" style="color: var(--danger);">${fmt.mxn(overdueAmt)}</div>
+        <div class="sub">${overdue.length} facturas</div>
+      </div>
+      <div class="sum-card">
+        <div class="l">Por vencer (7 días)</div>
+        <div class="v">${fmt.mxn(list.filter(i => { const d = fmt.daysUntil(i.dueDate); return d >= 0 && d <= 7; }).reduce((s, i) => s + i.total, 0))}</div>
+        <div class="sub">${list.filter(i => { const d = fmt.daysUntil(i.dueDate); return d >= 0 && d <= 7; }).length} facturas</div>
+      </div>
+      <div class="sum-card">
+        <div class="l">Promedio días</div>
+        <div class="v">${avgDays}</div>
+        <div class="sub">desde vencimiento</div>
+      </div>`;
+  }
+
+  function renderHistorialSummary(pays) {
+    const ym = new Date().toISOString().slice(0, 7);
+    const thisMonth = pays.filter(p => p.date.startsWith(ym));
+    const cobradoMes = thisMonth.filter(p => Store.find('invoices', p.invoiceId)?.type === 'emitted').reduce((s, p) => s + p.amount, 0);
+    const pagadoMes  = thisMonth.filter(p => Store.find('invoices', p.invoiceId)?.type === 'received').reduce((s, p) => s + p.amount, 0);
+    const cobradoTotal = pays.filter(p => Store.find('invoices', p.invoiceId)?.type === 'emitted').reduce((s, p) => s + p.amount, 0);
+
+    document.getElementById('summary').innerHTML = `
+      <div class="sum-card hero">
+        <div class="l">Cobrado este mes</div>
+        <div class="v">${fmt.mxn(cobradoMes)}</div>
+        <div class="sub">${thisMonth.filter(p => Store.find('invoices', p.invoiceId)?.type === 'emitted').length} pagos recibidos</div>
+      </div>
+      <div class="sum-card">
+        <div class="l">Pagado este mes</div>
+        <div class="v">${fmt.mxn(pagadoMes)}</div>
+        <div class="sub">${thisMonth.filter(p => Store.find('invoices', p.invoiceId)?.type === 'received').length} pagos realizados</div>
+      </div>
+      <div class="sum-card">
+        <div class="l">Total registros</div>
+        <div class="v">${pays.length}</div>
+        <div class="sub">pagos en historial</div>
+      </div>
+      <div class="sum-card">
+        <div class="l">Cobrado acumulado</div>
+        <div class="v">${fmt.mxn(cobradoTotal)}</div>
+        <div class="sub">todos los meses</div>
+      </div>`;
+  }
+
+  function renderHistorial(pays) {
+    const sorted = [...pays].sort((a, b) => b.date.localeCompare(a.date));
+    if (sorted.length === 0) {
+      document.getElementById('listEl').innerHTML = `<div class="empty"><div class="ic">○</div><h4>Sin pagos registrados</h4><p>Los pagos aparecerán aquí cuando los registres.</p></div>`;
+      return;
+    }
+    document.getElementById('listEl').innerHTML = `
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Fecha</th><th>Factura</th><th>Cliente / Proveedor</th>
+            <th>Método</th><th>Banco</th><th>Referencia</th><th class="num">Monto</th>
+          </tr></thead>
+          <tbody>
+            ${sorted.map(p => {
+              const inv  = Store.find('invoices', p.invoiceId);
+              const name = inv?.clientId ? Store.find('clients', inv.clientId)?.name : inv?.supplierName || '—';
+              const typeChip = inv?.type === 'emitted'
+                ? `<span class="badge badge-paid" style="margin-left:6px;font-size:0.68rem;">COBRO</span>`
+                : `<span class="badge badge-overdue" style="margin-left:6px;font-size:0.68rem;">PAGO</span>`;
+              return `<tr onclick="location.href='factura-detalle.html?id=${inv?.id}'" style="cursor:pointer;">
+                <td class="mono">${fmt.date(p.date)}</td>
+                <td class="mono">${inv?.folio || p.invoiceId}${typeChip}</td>
+                <td>${name}</td>
+                <td class="mono" style="font-size:0.82rem;">${p.method || '—'}</td>
+                <td class="mono" style="font-size:0.82rem;">${p.bank || '—'}</td>
+                <td class="mono" style="font-size:0.82rem;color:var(--stone);">${p.reference || '—'}</td>
+                <td class="num">${fmt.mxn(p.amount)}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>`;
+  }
+
+  function renderList(list) {
+    if (list.length === 0) {
+      document.getElementById('listEl').innerHTML = `<div class="empty"><div class="ic">✓</div><h4>¡Todo al corriente!</h4><p>No tienes ${tab === 'receivable' ? 'cuentas por cobrar' : 'cuentas por pagar'} en este momento.</p></div>`;
+      return;
+    }
+
+    const groups = {
+      overdue90: { title: 'Vencidas +90 días',  rows: [], sort: 0 },
+      overdue60: { title: 'Vencidas 61–90 días', rows: [], sort: 1 },
+      overdue30: { title: 'Vencidas 31–60 días', rows: [], sort: 2 },
+      overdue:   { title: 'Vencidas 1–30 días',  rows: [], sort: 3 },
+      today:     { title: 'Vencen hoy o mañana', rows: [], sort: 4 },
+      week:      { title: 'Vencen esta semana',  rows: [], sort: 5 },
+      later:     { title: 'Vencen después',      rows: [], sort: 6 }
+    };
+
+    list.forEach(i => {
+      const d = fmt.daysUntil(i.dueDate);
+      let key;
+      if      (d < -90) key = 'overdue90';
+      else if (d < -60) key = 'overdue60';
+      else if (d < -30) key = 'overdue30';
+      else if (d <   0) key = 'overdue';
+      else if (d <=  1) key = 'today';
+      else if (d <=  7) key = 'week';
+      else              key = 'later';
+      groups[key].rows.push({ ...i, days: d });
+    });
+
+    const html = Object.values(groups)
+      .filter(g => g.rows.length > 0)
+      .sort((a, b) => a.sort - b.sort)
+      .map(g => {
+        const total   = g.rows.reduce((s, r) => s + r.total, 0);
+        const rowsHtml = g.rows.sort((a, b) => a.days - b.days).map(i => renderRow(i)).join('');
+        return `<div class="group-head">
+          <h3>${g.title}</h3>
+          <div class="meta">${g.rows.length} facturas · <span class="amt">${fmt.mxn(total)}</span></div>
+        </div>${rowsHtml}`;
+      }).join('');
+
+    document.getElementById('listEl').innerHTML = html;
+  }
+
+  function renderRow(i) {
+    const name = i.clientId ? Store.find('clients', i.clientId).name : i.supplierName;
+    const rfc  = i.clientId ? Store.find('clients', i.clientId).rfc  : '';
+    const days = i.days;
+    let statusText;
+    if      (days < 0)  statusText = `<span style="color: var(--danger);">Vencida hace ${Math.abs(days)}d</span>`;
+    else if (days === 0) statusText = `<span style="color: var(--ochre);">Vence hoy</span>`;
+    else                 statusText = `En ${days} días`;
+
+    const actions = tab === 'receivable'
+      ? `<button class="btn btn-ghost" onclick="event.stopPropagation();sendRemind('${i.id}')">Recordar</button>
+         <button class="btn btn-primary" onclick="event.stopPropagation();openPayModal('${i.id}')">Cobrado</button>`
+      : `<button class="btn btn-ghost" onclick="event.stopPropagation();schedulePay('${i.id}')">Programar</button>
+         <button class="btn btn-primary" onclick="event.stopPropagation();openPayModal('${i.id}')">Pagado</button>`;
+
+    return `<div class="pay-row" onclick="location.href='factura-detalle.html?id=${i.id}'">
+      <div class="folio">${i.folio}</div>
+      <div class="who">${name}${rfc ? `<div class="rfc">${rfc}</div>` : ''}</div>
+      <div class="due">${fmt.date(i.dueDate)}</div>
+      <div class="status">${statusText}</div>
+      <div class="amt">${fmt.mxn(i.total)}</div>
+      <div class="act">${actions}</div>
+    </div>`;
+  }
+
+  // ── Modal de registro de pago ──────────────────────────────
+  window.openPayModal = (id) => {
+    const today = new Date().toISOString().slice(0, 10);
+    let invoiceSelect = '';
+
+    if (id) {
+      const inv = Store.find('invoices', id);
+      const name = inv.clientId ? Store.find('clients', inv.clientId)?.name : inv.supplierName;
+      invoiceSelect = `
+        <div class="form-field" style="grid-column:1/-1;">
+          <label>Factura</label>
+          <input type="text" readonly value="${inv.folio} · ${name} · ${fmt.mxn(inv.total)}" style="background:var(--bone);cursor:default;">
+          <input type="hidden" id="pInvId" value="${id}">
+        </div>`;
+    } else {
+      const pending = Store.all('invoices').filter(i => i.status === 'pending' || i.status === 'sent' || i.status === 'overdue');
+      invoiceSelect = `
+        <div class="form-field" style="grid-column:1/-1;">
+          <label>Factura</label>
+          <select id="pInvSel" onchange="syncPayAmt()">
+            <option value="">— Selecciona factura —</option>
+            ${pending.map(i => {
+              const name = i.clientId ? Store.find('clients', i.clientId)?.name : i.supplierName;
+              return `<option value="${i.id}" data-total="${i.total}">${i.folio} · ${name} · ${fmt.mxn(i.total)}</option>`;
+            }).join('')}
+          </select>
+          <input type="hidden" id="pInvId" value="">
+        </div>`;
+    }
+
+    const prefillAmt = id ? Store.find('invoices', id).total : '';
+
+    Modal.open(`
+      <div class="modal-head">
+        <div><h3>Registrar pago</h3><div class="sub">Ingresa los datos del pago recibido o realizado</div></div>
+        <button class="modal-close" onclick="Jobby.Modal.close()">✕</button>
+      </div>
+      <div class="form-row" style="grid-template-columns:1fr 1fr;">
+        ${invoiceSelect}
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label>Monto pagado</label>
+          <input type="number" id="pAmt" value="${prefillAmt}" min="1" step="0.01" placeholder="0.00">
+        </div>
+        <div class="form-field">
+          <label>Fecha de pago</label>
+          <input type="date" id="pDate" value="${today}">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label>Método de pago</label>
+          <select id="pMethod">
+            <option>Transferencia</option>
+            <option>SPEI</option>
+            <option>Efectivo</option>
+            <option>Cheque</option>
+            <option>Cargo directo</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label>Cuenta bancaria</label>
+          <select id="pBank">
+            <option value="BBVA">BBVA ****4521</option>
+            <option value="Santander">Santander ****8907</option>
+            <option value="Banorte">Banorte ****2134</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row full">
+        <div class="form-field">
+          <label>Referencia / No. de operación</label>
+          <input type="text" id="pRef" placeholder="Ej. BBVA-845721 (opcional)">
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-ghost btn-sm" onclick="Jobby.Modal.close()">Cancelar</button>
+        <button class="btn btn-primary btn-sm" onclick="confirmPay()">Registrar pago</button>
+      </div>`);
+  };
+
+  window.syncPayAmt = () => {
+    const sel = document.getElementById('pInvSel');
+    const opt = sel.options[sel.selectedIndex];
+    document.getElementById('pInvId').value = sel.value;
+    if (sel.value) document.getElementById('pAmt').value = opt.dataset.total;
+  };
+
+  window.confirmPay = () => {
+    const invId  = document.getElementById('pInvId').value;
+    const selEl  = document.getElementById('pInvSel');
+    const resolvedId = invId || (selEl?.value || '');
+    if (!resolvedId) { toast('Selecciona una factura'); return; }
+
+    const amt    = parseFloat(document.getElementById('pAmt').value);
+    const date   = document.getElementById('pDate').value;
+    const method = document.getElementById('pMethod').value;
+    const bank   = document.getElementById('pBank').value;
+    const ref    = document.getElementById('pRef').value.trim() || (bank + '-' + Date.now());
+
+    if (!amt || amt <= 0 || !date) { toast('Completa todos los campos requeridos'); return; }
+
+    const inv = Store.find('invoices', resolvedId);
+    Store.add('payments', { invoiceId: resolvedId, date, amount: amt, method, reference: ref, bank });
+    if (amt >= inv.total) {
+      Store.update('invoices', resolvedId, { status: 'paid' });
+      Store.logActivity(inv.type === 'emitted' ? 'Cobró factura' : 'Pagó factura', inv.folio);
+      toast(`Factura ${inv.folio} marcada como ${inv.type === 'emitted' ? 'cobrada' : 'pagada'}`);
+    } else {
+      Store.logActivity('Registró pago parcial', inv.folio);
+      toast(`Pago parcial de ${fmt.mxn(amt)} registrado en ${inv.folio}`);
+    }
+    Modal.close();
+    render();
+  };
+
+  window.sendRemind = (id) => {
+    const inv = Store.find('invoices', id);
+    Store.logActivity('Envió recordatorio', inv.folio);
+    toast(`Recordatorio enviado para ${inv.folio}`);
+  };
+
+  window.schedulePay = (id) => {
+    const inv = Store.find('invoices', id);
+    Modal.open(`
+      <div class="modal-head">
+        <div><h3>Programar pago</h3><div class="sub">Factura ${inv.folio} · ${fmt.mxn(inv.total)}</div></div>
+        <button class="modal-close" onclick="Jobby.Modal.close()">✕</button>
+      </div>
+      <div class="form-row">
+        <div class="form-field"><label>Fecha de pago</label><input type="date" id="sDate" value="${inv.dueDate}"></div>
+        <div class="form-field"><label>Cuenta bancaria</label>
+          <select id="sBank"><option>BBVA 4521</option><option>Santander 8907</option><option>Banorte 2134</option></select>
+        </div>
+      </div>
+      <div class="form-row full">
+        <div class="form-field"><label>Concepto de pago</label><input type="text" id="sRef" value="Pago factura ${inv.folio} · ${inv.supplierName || ''}"></div>
+      </div>
+      <p style="font-size: 0.82rem; color: var(--stone); margin-top: 8px;">Los pagos programados se ejecutan automáticamente con nuestra integración bancaria.</p>
+      <div class="modal-foot">
+        <button class="btn btn-ghost btn-sm" onclick="Jobby.Modal.close()">Cancelar</button>
+        <button class="btn btn-primary btn-sm" onclick="confirmSchedule('${id}')">Programar pago</button>
+      </div>`);
+  };
+
+  window.confirmSchedule = (id) => {
+    const inv = Store.find('invoices', id);
+    Store.logActivity('Programó pago', inv.folio);
+    Modal.close();
+    toast(`Pago de ${inv.folio} programado para ${fmt.date(document.getElementById('sDate').value)}`);
+  };
+
+  window.reconcile = () => {
+    Modal.open(`
+      <div class="modal-head">
+        <div><h3>Conciliar con bancos</h3><div class="sub">Sincronizando movimientos de tus cuentas</div></div>
+        <button class="modal-close" onclick="Jobby.Modal.close()">✕</button>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:14px;background:var(--bone);border-radius:var(--r-md);">
+          <div><strong>BBVA ****4521</strong><div style="font-size:0.82rem;color:var(--stone);font-family:var(--mono);">Cuenta principal MXN</div></div>
+          <span style="color:var(--success);">● Sincronizado</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:14px;background:var(--bone);border-radius:var(--r-md);">
+          <div><strong>Santander ****8907</strong><div style="font-size:0.82rem;color:var(--stone);font-family:var(--mono);">Cuenta USD</div></div>
+          <span style="color:var(--success);">● Sincronizado</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:14px;background:var(--bone);border-radius:var(--r-md);">
+          <div><strong>Banorte ****2134</strong><div style="font-size:0.82rem;color:var(--stone);font-family:var(--mono);">Nómina</div></div>
+          <span style="color:var(--success);">● Sincronizado</span>
+        </div>
+      </div>
+      <p style="margin-top:16px;font-size:0.85rem;color:var(--stone);">Última sincronización: hace 12 minutos. Los bancos se actualizan automáticamente cada 15 minutos.</p>
+      <div class="modal-foot">
+        <button class="btn btn-ghost btn-sm" onclick="Jobby.Modal.close()">Cerrar</button>
+        <button class="btn btn-primary btn-sm" onclick="Jobby.toast('Bancos sincronizados manualmente');Jobby.Modal.close()">Sincronizar ahora</button>
+      </div>`);
+  };
+
+  render();
+})();
+</script>
+<script src="demo-aviso.js"></script>
+</body>
+</html>

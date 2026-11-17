@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Servicios — FHO Servicios</title>
+<link rel="icon" type="image/png" href="fho-logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400&family=Outfit:wght@200;300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<style>
+  .services{padding:40px 56px 140px;position:relative}
+  .services-grid{
+    max-width:1320px;margin:0 auto;
+    display:grid;grid-template-columns:repeat(3,1fr);gap:1px;
+    background:var(--line-soft);
+    border:1px solid var(--line-soft);
+  }
+  .service{
+    background:var(--bg-0);
+    padding:48px 40px;
+    position:relative;cursor:pointer;
+    transition:all .5s cubic-bezier(.2,.8,.2,1);
+    overflow:hidden;
+  }
+  .service::before{
+    content:'';position:absolute;inset:0;
+    background:radial-gradient(circle at var(--mx,50%) var(--my,50%), rgba(224,168,90,.13), transparent 60%);
+    opacity:0;transition:opacity .4s ease;
+  }
+  .service:hover{background:var(--bg-1)}
+  .service:hover::before{opacity:1}
+  .service-num{
+    font-family:'Fraunces',serif;font-style:italic;
+    color:var(--gold);font-size:.95rem;letter-spacing:.1em;
+    opacity:.7;margin-bottom:26px;
+  }
+  .service-icon{
+    width:60px;height:60px;margin-bottom:30px;
+    display:grid;place-items:center;
+    border:1px solid var(--line);border-radius:14px;
+    color:var(--gold);
+    transition:all .4s ease;
+  }
+  .service:hover .service-icon{
+    background:var(--gold);color:var(--bg-0);
+    transform:rotate(-6deg) scale(1.05);
+    box-shadow:var(--shadow-gold);
+  }
+  .service-icon svg{width:28px;height:28px;stroke-width:1.5}
+  .service-title{
+    font-family:'Fraunces',serif;font-weight:400;
+    font-size:1.7rem;line-height:1.2;margin-bottom:16px;
+    letter-spacing:-.005em;
+  }
+  .service-desc{color:var(--ink-soft);font-size:1.05rem;line-height:1.6}
+  .service-arrow{
+    position:absolute;top:40px;right:40px;
+    color:var(--ink-mute);
+    transition:all .4s ease;opacity:0;transform:translate(-8px,8px);
+  }
+  .service:hover .service-arrow{opacity:1;transform:translate(0,0);color:var(--gold)}
+
+  .cta-strip{
+    padding:120px 56px;text-align:center;
+    border-top:1px solid var(--line-soft);
+    position:relative;z-index:2;
+  }
+  .cta-strip h3{
+    font-family:'Fraunces',serif;font-weight:300;
+    font-size:clamp(2rem,4vw,3rem);line-height:1.1;
+    margin-bottom:28px;
+  }
+  .cta-strip h3 em{color:var(--gold);font-style:italic;font-weight:400}
+  .cta-strip p{color:var(--ink-soft);font-size:1.15rem;max-width:580px;margin:0 auto 36px}
+
+  @media (max-width:1100px){.services-grid{grid-template-columns:repeat(2,1fr)}}
+  @media (max-width:700px){
+    .services{padding:20px 24px 80px}
+    .services-grid{grid-template-columns:1fr}
+    .service{padding:36px 28px}
+    .cta-strip{padding:80px 24px}
+  }
+</style>
+</head>
+<body>
+
+<div class="mesh"></div>
+<canvas id="particles"></canvas>
+<div class="grain"></div>
+
+<nav id="nav">
+  <a href="index.html" class="brand">
+    <div class="brand-mark"><img src="fho-logo.png" alt="FHO Servicios"></div>
+    <div class="brand-text">FHO <span>Servicios</span></div>
+  </a>
+  <div class="nav-links">
+    <a href="index.html">Inicio</a>
+    <a href="servicios.html" class="active">Servicios</a>
+    <a href="portafolio.html">Portafolio</a>
+    <a href="contacto.html" class="nav-cta show-mobile">Contacto</a>
+  </div>
+</nav>
+
+<header class="page-header">
+  <div class="page-eyebrow">Lo que hacemos</div>
+  <h1 class="page-title">Servicios diseñados para <em>transformar</em></h1>
+  <p class="page-desc">
+    Soluciones integrales en capital humano y desarrollo organizacional,
+    adaptadas a la realidad y los retos únicos de cada empresa.
+  </p>
+</header>
+
+<section class="services">
+  <div class="services-grid reveal">
+
+    <article class="service">
+      <div class="service-num">— 01</div>
+      <div class="service-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 16.8 5.8 21.3l2.4-7.4L2 9.4h7.6z"/></svg></div>
+      <h3 class="service-title">Efectividad organizacional y gestión del cambio</h3>
+      <p class="service-desc">Acompañamos procesos de transformación con metodologías probadas y enfoque humano que garantizan adopción real.</p>
+      <div class="service-arrow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M9 7h8v8"/></svg></div>
+    </article>
+
+    <article class="service">
+      <div class="service-num">— 02</div>
+      <div class="service-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></div>
+      <h3 class="service-title">Consultoría a empresas familiares</h3>
+      <p class="service-desc">Profesionalización, gobierno corporativo y planes de sucesión diseñados para preservar el legado familiar.</p>
+      <div class="service-arrow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M9 7h8v8"/></svg></div>
+    </article>
+
+    <article class="service">
+      <div class="service-num">— 03</div>
+      <div class="service-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.3-4.3M8 11h6M11 8v6"/></svg></div>
+      <h3 class="service-title">Diagnóstico organizacional</h3>
+      <p class="service-desc">Análisis profundo del estado actual de tu organización para tomar decisiones con datos, no suposiciones.</p>
+      <div class="service-arrow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M9 7h8v8"/></svg></div>
+    </article>
+
+    <article class="service">
+      <div class="service-num">— 04</div>
+      <div class="service-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></div>
+      <h3 class="service-title">Head Hunting y selección de talento</h3>
+      <p class="service-desc">Identificamos y atraemos al mejor talento ejecutivo y especializado para los puestos clave de tu equipo.</p>
+      <div class="service-arrow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M9 7h8v8"/></svg></div>
+    </article>
+
+    <article class="service">
+      <div class="service-num">— 05</div>
+      <div class="service-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+      <h3 class="service-title">Recursos humanos en su empresa</h3>
+      <p class="service-desc">Estructuramos y operamos tu área de RH para que se enfoque en lo verdaderamente estratégico.</p>
+      <div class="service-arrow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M9 7h8v8"/></svg></div>
+    </article>
+
+    <article class="service">
+      <div class="service-num">— 06</div>
+      <div class="service-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 15l2 2 4-4"/></svg></div>
+      <h3 class="service-title">Evaluaciones de ingreso</h3>
+      <p class="service-desc">Pruebas psicométricas, técnicas y de competencias para tomar decisiones de contratación informadas.</p>
+      <div class="service-arrow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M9 7h8v8"/></svg></div>
+    </article>
+
+    <article class="service">
+      <div class="service-num">— 07</div>
+      <div class="service-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+      <h3 class="service-title">Compensaciones y organización</h3>
+      <p class="service-desc">Diseñamos esquemas competitivos y estructuras organizacionales eficientes que retienen al mejor talento.</p>
+      <div class="service-arrow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M9 7h8v8"/></svg></div>
+    </article>
+
+    <article class="service">
+      <div class="service-num">— 08</div>
+      <div class="service-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></div>
+      <h3 class="service-title">Asesoría laboral</h3>
+      <p class="service-desc">Acompañamiento experto en temas legales, normativos y de relaciones laborales para tu tranquilidad.</p>
+      <div class="service-arrow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M9 7h8v8"/></svg></div>
+    </article>
+
+    <article class="service">
+      <div class="service-num">— 09</div>
+      <div class="service-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg></div>
+      <h3 class="service-title">Capacitación especializada</h3>
+      <p class="service-desc">Programas a la medida en RH, calidad y compensaciones para potenciar las capacidades de tu equipo.</p>
+      <div class="service-arrow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M9 7h8v8"/></svg></div>
+    </article>
+
+  </div>
+</section>
+
+<section class="cta-strip reveal">
+  <h3>Conoce a quienes han <em>confiado</em> en nosotros</h3>
+  <p>Más de dos décadas acompañando a empresas mexicanas en su camino hacia la excelencia.</p>
+  <a href="portafolio.html" class="btn btn-primary">
+    Ver portafolio
+    <svg class="arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+  </a>
+</section>
+
+<footer>
+  <div class="footer-brand">FHO Servicios</div>
+  <div class="footer-divider"></div>
+  <div class="footer-text">© 2026 FHO Servicios, S.A. de C.V. — Todos los derechos reservados.</div>
+  <div class="footer-meta">
+    <a href="tel:+528112975182">Tel. (81) 12-97-51-82</a>
+    <a href="https://wa.me/528182871380">WhatsApp 818-287-13-80</a>
+    <a href="mailto:info@fhoservicios.com">info@fhoservicios.com</a>
+  </div>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>

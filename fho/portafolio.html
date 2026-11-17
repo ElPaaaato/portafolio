@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Portafolio — FHO Servicios</title>
+<link rel="icon" type="image/png" href="fho-logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400&family=Outfit:wght@200;300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<style>
+  /* ───── Stats bar ───── */
+  .stats-bar{
+    max-width:1240px;margin:20px auto 0;padding:0 56px;
+    display:grid;grid-template-columns:repeat(4,1fr);gap:1px;
+    background:var(--line-soft);
+    border:1px solid var(--line-soft);border-radius:8px;overflow:hidden;
+  }
+  .stats-bar .cell{
+    background:var(--bg-1);
+    padding:36px 24px;text-align:center;
+  }
+  .stats-bar .num{
+    font-family:'Fraunces',serif;font-size:3rem;font-weight:300;
+    color:var(--gold);line-height:1;
+  }
+  .stats-bar .num span{font-size:1.3rem;vertical-align:super}
+  .stats-bar .lbl{
+    margin-top:10px;font-size:.82rem;letter-spacing:.18em;
+    text-transform:uppercase;color:var(--ink-soft);
+  }
+
+  /* ───── Testimonials ───── */
+  .testimonials{padding:120px 56px;position:relative}
+  .testimonials-grid{
+    max-width:1320px;margin:0 auto;
+    display:grid;grid-template-columns:repeat(3,1fr);gap:28px;
+  }
+  .testimonial{
+    background:linear-gradient(180deg,var(--bg-1),var(--bg-2));
+    border:1px solid var(--line-soft);
+    border-radius:18px;padding:38px 34px;
+    position:relative;overflow:hidden;
+    transition:all .5s cubic-bezier(.2,.8,.2,1);
+  }
+  .testimonial::before{
+    content:'"';position:absolute;top:-30px;right:14px;
+    font-family:'Fraunces',serif;font-size:11rem;
+    color:var(--gold);opacity:.08;line-height:1;font-style:italic;
+    pointer-events:none;
+  }
+  .testimonial:hover{
+    transform:translateY(-6px);
+    border-color:var(--line);
+    box-shadow:0 30px 60px -30px rgba(0,0,0,.4), 0 0 0 1px var(--line);
+  }
+  .stars{
+    display:flex;gap:4px;margin-bottom:22px;
+  }
+  .stars svg{width:18px;height:18px;fill:var(--gold);
+    filter:drop-shadow(0 0 4px rgba(224,168,90,.5))}
+  .quote{
+    font-family:'Fraunces',serif;font-weight:300;font-style:italic;
+    font-size:1.15rem;line-height:1.55;color:var(--ink);
+    margin-bottom:30px;letter-spacing:-.005em;
+    position:relative;z-index:1;
+  }
+  .author{
+    display:flex;align-items:center;gap:14px;
+    padding-top:24px;border-top:1px solid var(--line-soft);
+  }
+  .avatar{
+    width:48px;height:48px;border-radius:50%;
+    background:linear-gradient(135deg,var(--gold),var(--gold-deep));
+    display:grid;place-items:center;
+    font-family:'Fraunces',serif;font-weight:500;font-size:1.1rem;
+    color:var(--bg-0);flex-shrink:0;
+    box-shadow:0 6px 18px -8px rgba(224,168,90,.6);
+  }
+  .author-info{flex:1;min-width:0}
+  .author-name{font-weight:500;font-size:1rem;color:var(--ink);margin-bottom:3px}
+  .author-role{font-size:.85rem;color:var(--ink-mute);letter-spacing:.02em}
+  .author-company{
+    font-size:.78rem;color:var(--gold);letter-spacing:.12em;
+    text-transform:uppercase;margin-top:5px;font-weight:500;
+  }
+
+  /* ───── Service tag ───── */
+  .service-tag{
+    display:inline-block;padding:6px 14px;
+    background:rgba(224,168,90,.1);border:1px solid var(--line);
+    color:var(--gold);font-size:.72rem;letter-spacing:.15em;
+    text-transform:uppercase;border-radius:100px;
+    margin-bottom:20px;
+  }
+
+  /* ───── Trust strip ───── */
+  .trust{
+    padding:80px 56px;text-align:center;
+    border-top:1px solid var(--line-soft);
+    position:relative;z-index:2;
+  }
+  .trust-label{
+    font-size:.85rem;letter-spacing:.4em;text-transform:uppercase;
+    color:var(--ink-mute);margin-bottom:36px;
+  }
+  .trust-logos{
+    display:flex;justify-content:center;align-items:center;gap:60px;
+    flex-wrap:wrap;
+  }
+  .trust-logo{
+    font-family:'Fraunces',serif;font-style:italic;font-weight:400;
+    font-size:1.4rem;color:var(--ink-soft);opacity:.6;
+    transition:all .3s ease;cursor:default;
+  }
+  .trust-logo:hover{opacity:1;color:var(--gold)}
+
+  /* ───── CTA ───── */
+  .cta-strip{
+    padding:120px 56px;text-align:center;
+    border-top:1px solid var(--line-soft);
+    position:relative;z-index:2;
+  }
+  .cta-strip h3{
+    font-family:'Fraunces',serif;font-weight:300;
+    font-size:clamp(2rem,4vw,3rem);line-height:1.1;
+    margin-bottom:28px;
+  }
+  .cta-strip h3 em{color:var(--gold);font-style:italic;font-weight:400}
+  .cta-strip p{color:var(--ink-soft);font-size:1.15rem;max-width:580px;margin:0 auto 36px}
+
+  @media (max-width:1100px){.testimonials-grid{grid-template-columns:repeat(2,1fr)}}
+  @media (max-width:700px){
+    .stats-bar{grid-template-columns:repeat(2,1fr);padding:0 24px}
+    .testimonials{padding:80px 24px}
+    .testimonials-grid{grid-template-columns:1fr;gap:20px}
+    .testimonial{padding:30px 26px}
+    .trust{padding:60px 24px}
+    .trust-logos{gap:30px}
+    .trust-logo{font-size:1.1rem}
+    .cta-strip{padding:80px 24px}
+  }
+</style>
+</head>
+<body>
+
+<div class="mesh"></div>
+<canvas id="particles"></canvas>
+<div class="grain"></div>
+
+<nav id="nav">
+  <a href="index.html" class="brand">
+    <div class="brand-mark"><img src="fho-logo.png" alt="FHO Servicios"></div>
+    <div class="brand-text">FHO <span>Servicios</span></div>
+  </a>
+  <div class="nav-links">
+    <a href="index.html">Inicio</a>
+    <a href="servicios.html">Servicios</a>
+    <a href="portafolio.html" class="active">Portafolio</a>
+    <a href="contacto.html" class="nav-cta show-mobile">Contacto</a>
+  </div>
+</nav>
+
+<header class="page-header">
+  <div class="page-eyebrow">Casos de éxito</div>
+  <h1 class="page-title">La voz de quienes <em>confían</em> en nosotros</h1>
+  <p class="page-desc">
+    Más de dos décadas transformando organizaciones mexicanas. Estos son algunos de
+    los testimonios de empresas que han crecido con nuestro acompañamiento.
+  </p>
+</header>
+
+<div class="stats-bar reveal">
+  <div class="cell"><div class="num">+150</div><div class="lbl">Clientes atendidos</div></div>
+  <div class="cell"><div class="num">+800</div><div class="lbl">Posiciones cubiertas</div></div>
+  <div class="cell"><div class="num">96<span>%</span></div><div class="lbl">Tasa de retención</div></div>
+  <div class="cell"><div class="num">4.9<span>/5</span></div><div class="lbl">Satisfacción promedio</div></div>
+</div>
+
+<section class="testimonials">
+  <div class="testimonials-grid">
+
+    <article class="testimonial reveal">
+      <div class="service-tag">Head Hunting</div>
+      <div class="stars">
+        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+      </div>
+      <p class="quote">"Encontraron al Director de Operaciones que llevábamos seis meses buscando. El proceso fue rápido, profesional y los candidatos presentados superaron por mucho nuestras expectativas."</p>
+      <div class="author">
+        <div class="avatar">RM</div>
+        <div class="author-info">
+          <div class="author-name">Roberto Martínez</div>
+          <div class="author-role">Director General</div>
+          <div class="author-company">Grupo Industrial del Norte</div>
+        </div>
+      </div>
+    </article>
+
+    <article class="testimonial reveal">
+      <div class="service-tag">Empresas Familiares</div>
+      <div class="stars">
+        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+      </div>
+      <p class="quote">"Nos ayudaron a estructurar el plan de sucesión de nuestra empresa familiar. Después de tres generaciones, por fin tenemos un gobierno corporativo claro. Invaluable."</p>
+      <div class="author">
+        <div class="avatar">PG</div>
+        <div class="author-info">
+          <div class="author-name">Patricia Garza</div>
+          <div class="author-role">CEO</div>
+          <div class="author-company">Constructora Saltillo</div>
+        </div>
+      </div>
+    </article>
+
+    <article class="testimonial reveal">
+      <div class="service-tag">Diagnóstico Organizacional</div>
+      <div class="stars">
+        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+      </div>
+      <p class="quote">"El diagnóstico que realizaron destapó áreas de oportunidad que nunca habíamos visto. En seis meses redujimos rotación en 40% siguiendo sus recomendaciones."</p>
+      <div class="author">
+        <div class="avatar">JH</div>
+        <div class="author-info">
+          <div class="author-name">Javier Hernández</div>
+          <div class="author-role">Director de RH</div>
+          <div class="author-company">Fármacos Monterrey</div>
+        </div>
+      </div>
+    </article>
+
+    <article class="testimonial reveal">
+      <div class="service-tag">Capacitación</div>
+      <div class="stars">
+        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+      </div>
+      <p class="quote">"Capacitaron a todo nuestro equipo de mandos medios en gestión de calidad. Los facilitadores son expertos y el contenido fue 100% aplicable a nuestra operación."</p>
+      <div class="author">
+        <div class="avatar">LO</div>
+        <div class="author-info">
+          <div class="author-name">Lucía Ortega</div>
+          <div class="author-role">Gerente de Calidad</div>
+          <div class="author-company">Logística Aduanal Tijuana</div>
+        </div>
+      </div>
+    </article>
+
+    <article class="testimonial reveal">
+      <div class="service-tag">Compensaciones</div>
+      <div class="stars">
+        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+      </div>
+      <p class="quote">"Rediseñaron nuestro esquema de compensaciones de manera estratégica. Hoy somos competitivos en el mercado y retenemos al mejor talento técnico de la región."</p>
+      <div class="author">
+        <div class="avatar">CM</div>
+        <div class="author-info">
+          <div class="author-name">Carlos Mendoza</div>
+          <div class="author-role">Director de Capital Humano</div>
+          <div class="author-company">Distribuidora Pacífico</div>
+        </div>
+      </div>
+    </article>
+
+    <article class="testimonial reveal">
+      <div class="service-tag">Asesoría Laboral</div>
+      <div class="stars">
+        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+      </div>
+      <p class="quote">"Su asesoría laboral durante la reestructura fue clave. Manejaron cada detalle con profesionalismo y empatía. La transición se dio sin contingencias ni conflictos."</p>
+      <div class="author">
+        <div class="avatar">AR</div>
+        <div class="author-info">
+          <div class="author-name">Andrea Ramírez</div>
+          <div class="author-role">Directora Jurídica</div>
+          <div class="author-company">Aceros y Metales del Bajío</div>
+        </div>
+      </div>
+    </article>
+
+    <article class="testimonial reveal">
+      <div class="service-tag">Gestión del Cambio</div>
+      <div class="stars">
+        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+      </div>
+      <p class="quote">"Acompañaron nuestra fusión con otra compañía. Su metodología de gestión del cambio aseguró que la cultura se preservara sin perder al talento clave durante el proceso."</p>
+      <div class="author">
+        <div class="avatar">FT</div>
+        <div class="author-info">
+          <div class="author-name">Fernando Treviño</div>
+          <div class="author-role">VP de Operaciones</div>
+          <div class="author-company">Servicios Empresariales NL</div>
+        </div>
+      </div>
+    </article>
+
+    <article class="testimonial reveal">
+      <div class="service-tag">Evaluaciones</div>
+      <div class="stars">
+        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        <svg viewBox="0 0 24 24" style="fill:none;stroke:var(--gold);stroke-width:2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+      </div>
+      <p class="quote">"Las evaluaciones psicométricas que aplican son las más completas que hemos visto. Nos han permitido formar equipos sólidos y con muy bajo índice de fracaso en contrataciones."</p>
+      <div class="author">
+        <div class="avatar">MV</div>
+        <div class="author-info">
+          <div class="author-name">Mariana Villarreal</div>
+          <div class="author-role">Gerente de Reclutamiento</div>
+          <div class="author-company">Tecnología Aplicada MX</div>
+        </div>
+      </div>
+    </article>
+
+  </div>
+</section>
+
+<section class="trust reveal">
+  <div class="trust-label">Empresas que han confiado en nosotros</div>
+  <div class="trust-logos">
+    <div class="trust-logo">Grupo del Norte</div>
+    <div class="trust-logo">Saltillo</div>
+    <div class="trust-logo">Fármacos MTY</div>
+    <div class="trust-logo">Logística TIJ</div>
+    <div class="trust-logo">Pacífico</div>
+    <div class="trust-logo">Bajío</div>
+  </div>
+</section>
+
+<section class="cta-strip reveal">
+  <h3>Sé el siguiente <em>caso de éxito</em></h3>
+  <p>Conversemos sobre cómo podemos transformar tu organización desde el capital humano.</p>
+  <a href="contacto.html" class="btn btn-primary">
+    Iniciar conversación
+    <svg class="arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+  </a>
+</section>
+
+<footer>
+  <div class="footer-brand">FHO Servicios</div>
+  <div class="footer-divider"></div>
+  <div class="footer-text">© 2026 FHO Servicios, S.A. de C.V. — Todos los derechos reservados.</div>
+  <div class="footer-meta">
+    <a href="tel:+528112975182">Tel. (81) 12-97-51-82</a>
+    <a href="https://wa.me/528182871380">WhatsApp 818-287-13-80</a>
+    <a href="mailto:info@fhoservicios.com">info@fhoservicios.com</a>
+  </div>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>

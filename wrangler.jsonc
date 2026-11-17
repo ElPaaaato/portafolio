@@ -1,0 +1,8 @@
+// Cloudflare: el portafolio es una página estática; se publica tal cual, sin compilar.
+{
+  "name": "patricio-varela",
+  "compatibility_date": "2026-11-01",
+  "assets": {
+    "directory": "./"
+  }
+}

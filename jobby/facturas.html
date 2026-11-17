@@ -1,0 +1,1227 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Facturas · Jobby</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  .status-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 24px; overflow-x: auto; scrollbar-width: none; }
+  .status-tabs::-webkit-scrollbar { display: none; }
+  .stab { background: transparent; border: 0; padding: 14px 18px; font-family: var(--sans); font-size: 0.92rem; color: var(--stone); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+  .stab .count { font-family: var(--mono); font-size: 0.72rem; background: var(--bone); padding: 2px 8px; border-radius: 999px; color: var(--slate); }
+  .stab:hover { color: var(--ink); }
+  .stab.active { color: var(--ink); border-bottom-color: var(--ochre); font-weight: 500; }
+  .stab.active .count { background: var(--ochre); color: var(--cream); }
+  .filter-bar { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
+  .filter { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; background: var(--paper); border: 1px solid var(--line); border-radius: 999px; font-size: 0.85rem; color: var(--slate); cursor: pointer; font-family: var(--sans); }
+  .filter:hover { border-color: var(--ink); }
+  .filter svg { width: 12px; height: 12px; }
+  .filter.active { background: var(--ink); color: var(--cream); border-color: var(--ink); }
+  select.filter { padding-right: 30px; appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%236B6B5E' stroke-width='2'><polyline points='6 9 12 15 18 9'/></svg>"); background-repeat: no-repeat; background-position: right 12px center; }
+  .filter-sep { flex: 1; }
+  .bulk-bar { background: var(--ink); color: var(--cream); border-radius: var(--r-md); padding: 12px 20px; display: none; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .bulk-bar.show { display: flex; }
+  .bulk-bar .count-sel { font-family: var(--mono); font-size: 0.9rem; color: var(--amber); }
+  .bulk-actions { display: flex; gap: 8px; }
+  .bulk-btn { background: rgba(244, 239, 228, 0.08); border: 1px solid rgba(244, 239, 228, 0.15); color: var(--cream); padding: 6px 14px; border-radius: 999px; font-size: 0.82rem; font-family: var(--sans); cursor: pointer; }
+  .bulk-btn:hover { background: rgba(244, 239, 228, 0.15); }
+  .chk-col { width: 40px; padding-left: 24px; padding-right: 0; }
+  .chk { width: 16px; height: 16px; border: 1.5px solid var(--line-2); border-radius: 4px; background: var(--paper); cursor: pointer; appearance: none; -webkit-appearance: none; position: relative; }
+  .chk:checked { background: var(--ink); border-color: var(--ink); }
+  .chk:checked::after { content: ''; position: absolute; left: 3px; top: 1px; width: 6px; height: 10px; border-right: 2px solid var(--cream); border-bottom: 2px solid var(--cream); transform: rotate(45deg); }
+  .rm-btn { width: 28px; height: 28px; border-radius: 6px; background: transparent; border: 0; cursor: pointer; color: var(--stone); display: grid; place-items: center; opacity: 0; transition: opacity 100ms; }
+  .rm-btn:hover { background: var(--bone); color: var(--ink); }
+  .rm-btn svg { width: 14px; height: 14px; }
+  tr:hover .rm-btn { opacity: 1; }
+  .pager { display: flex; justify-content: space-between; align-items: center; padding: 18px 24px; border-top: 1px solid var(--line); background: var(--bone); font-family: var(--mono); font-size: 0.82rem; color: var(--stone); }
+  .pager-btns { display: flex; gap: 4px; }
+  .pager-btns button { width: 32px; height: 32px; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); cursor: pointer; color: var(--slate); font-family: var(--mono); font-size: 0.82rem; }
+  .pager-btns button.active { background: var(--ink); color: var(--cream); border-color: var(--ink); }
+  .pager-btns button:disabled { opacity: 0.4; cursor: not-allowed; }
+  .data-source { background: rgba(15, 81, 50, 0.06); border: 1px solid rgba(15, 81, 50, 0.15); border-left: 3px solid var(--moss); padding: 12px 18px; border-radius: var(--r-md); margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; font-size: 0.88rem; }
+  .data-source .left { display: flex; gap: 10px; align-items: center; color: var(--slate); }
+  .sync-dot { width: 8px; height: 8px; background: var(--success); border-radius: 50%; }
+  .data-source .right { font-family: var(--mono); font-size: 0.78rem; color: var(--stone); }
+  tr.clickable { cursor: pointer; }
+  .amount-range { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: var(--paper); border: 1px solid var(--line); border-radius: 999px; }
+  .amount-range-label { font-size: 0.82rem; color: var(--stone); font-family: var(--mono); }
+  .amount-range-sep { font-size: 0.8rem; color: var(--stone); }
+  .amount-input { border: 0; background: transparent; outline: none; font-family: var(--mono); font-size: 0.85rem; color: var(--ink); width: 72px; }
+  .amount-input::placeholder { color: var(--stone); }
+  th.sortable { cursor: pointer; user-select: none; white-space: nowrap; }
+  th.sortable:hover { color: var(--ink); }
+  th.sortable::after { content: ' ↕'; font-size: 0.7rem; color: var(--stone); opacity: 0.5; }
+  th.sort-asc::after { content: ' ↑'; color: var(--moss); opacity: 1; }
+  th.sort-desc::after { content: ' ↓'; color: var(--moss); opacity: 1; }
+  .filters-active { color: var(--ochre); border-color: var(--ochre); }
+
+  /* ── Client accordion sections ────────────────────────── */
+  .cli-card { background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-md); margin-bottom: 12px; overflow: hidden; }
+  .cc-head { display: flex; align-items: center; gap: 14px; padding: 14px 18px; cursor: pointer; user-select: none; transition: background 120ms; }
+  .cc-head:hover { background: var(--bone); }
+  .cc-avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--moss); color: var(--cream); font-family: var(--mono); font-size: 0.75rem; font-weight: 700; display: grid; place-items: center; flex-shrink: 0; letter-spacing: 0.03em; }
+  .cc-info { flex: 1; min-width: 0; }
+  .cc-name { font-size: 0.95rem; font-weight: 600; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cc-sub { font-family: var(--mono); font-size: 0.73rem; color: var(--stone); margin-top: 1px; }
+  .cc-stats { display: flex; align-items: center; gap: 16px; flex-shrink: 0; }
+  .cc-stat { font-family: var(--mono); font-size: 0.78rem; color: var(--stone); white-space: nowrap; }
+  .cc-stat strong { color: var(--ink); }
+  .cc-actions { display: flex; gap: 6px; flex-shrink: 0; }
+  .cc-nf-btn { padding: 5px 12px; font-family: var(--mono); font-size: 0.7rem; border: 1px solid var(--line); border-radius: 5px; background: var(--paper); color: var(--slate); cursor: pointer; white-space: nowrap; }
+  .cc-nf-btn:hover { border-color: var(--ink); color: var(--ink); background: var(--bone); }
+  .cc-bill-btn { padding: 5px 12px; font-family: var(--mono); font-size: 0.7rem; border: 1px solid rgba(15,81,50,0.35); border-radius: 5px; background: rgba(15,81,50,0.07); color: #0F5132; cursor: pointer; white-space: nowrap; }
+  .cc-bill-btn:hover { background: rgba(15,81,50,0.14); }
+  .cc-chevron { width: 18px; height: 18px; color: var(--stone); transition: transform 200ms; flex-shrink: 0; }
+  .cc-chevron.open { transform: rotate(180deg); }
+  .cc-body { display: none; border-top: 1px solid var(--line); }
+  .cc-body.open { display: block; }
+  .inv-table-wrap { overflow-x: auto; }
+  .inv-table { width: 100%; border-collapse: collapse; }
+  .inv-table thead th { font-family: var(--mono); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--stone); padding: 9px 16px; text-align: left; background: var(--bone); border-bottom: 1px solid var(--line); white-space: nowrap; }
+  .inv-table thead th.num { text-align: right; }
+  .inv-table tbody td { padding: 11px 16px; border-bottom: 1px solid var(--line); font-size: 0.88rem; color: var(--ink); }
+  .inv-table tbody tr:last-child td { border-bottom: 0; }
+  .inv-table tbody tr.clickable:hover td { background: var(--bone); cursor: pointer; }
+  .fc-section { padding: 12px 18px 16px; background: rgba(15,81,50,0.03); border-top: 1px solid var(--line); }
+  .fc-section-head { margin-bottom: 10px; }
+  .fc-section-label { font-family: var(--mono); font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--stone); font-weight: 600; }
+  .fc-item { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 6px; background: var(--paper); border: 1px solid var(--line); margin-bottom: 6px; }
+  .fc-item:last-child { margin-bottom: 0; }
+  .fc-item-svc { font-family: var(--mono); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--stone); width: 110px; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .fc-item-concept { flex: 1; font-size: 0.84rem; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .fc-item-month { font-family: var(--mono); font-size: 0.76rem; color: var(--stone); flex-shrink: 0; }
+  .fc-item-amt { font-family: var(--mono); font-size: 0.82rem; color: var(--ink); font-weight: 600; flex-shrink: 0; min-width: 90px; text-align: right; }
+
+  /* ── Nueva Factura panel ───────────────────────────── */
+  .nf-overlay { position: fixed; inset: 0; background: rgba(14,31,26,0.55); z-index: 200; opacity: 0; pointer-events: none; transition: opacity 220ms; }
+  .nf-overlay.open { opacity: 1; pointer-events: auto; }
+  .nf-sheet { position: fixed; top: 0; right: 0; bottom: 0; width: min(680px, 100vw); background: var(--cream); z-index: 201; transform: translateX(110%); transition: transform 260ms cubic-bezier(0.25,0.46,0.45,0.94); overflow: hidden; display: flex; flex-direction: column; box-shadow: -12px 0 60px rgba(0,0,0,0.22); }
+  .nf-sheet.open { transform: translateX(0); }
+  .nf-head { flex-shrink: 0; padding: 20px 28px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; background: var(--cream); }
+  .nf-head-left .nf-eyebrow { font-family: var(--mono); font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--stone); margin-bottom: 4px; }
+  .nf-head-left h2 { font-family: var(--serif); font-size: 1.4rem; color: var(--ink); margin: 0; }
+  .nf-x { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--line); background: transparent; cursor: pointer; display: grid; place-items: center; color: var(--stone); transition: all 120ms; flex-shrink: 0; }
+  .nf-x:hover { background: var(--bone); color: var(--ink); border-color: var(--slate); }
+  .nf-body { flex: 1; overflow-y: auto; padding: 24px 28px; }
+  .nf-foot { flex-shrink: 0; padding: 14px 28px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; background: var(--cream); }
+  .nf-foot-tot { font-family: var(--mono); font-size: 0.82rem; color: var(--stone); }
+  .nf-foot-tot strong { font-family: var(--serif); font-size: 1.22rem; color: var(--ink); margin-left: 6px; }
+  .nf-sect { padding-bottom: 22px; margin-bottom: 22px; border-bottom: 1px solid var(--line); }
+  .nf-sect:last-child { border: 0; padding-bottom: 0; }
+  .nf-sect-h { font-size: 0.92rem; font-weight: 600; color: var(--ink); margin-bottom: 2px; }
+  .nf-sect-d { font-family: var(--mono); font-size: 0.75rem; color: var(--stone); margin-bottom: 14px; }
+  .nf-emisor { display: flex; flex-wrap: wrap; gap: 4px 20px; padding: 10px 14px; background: var(--bone); border-radius: var(--r-md); font-family: var(--mono); font-size: 0.76rem; color: var(--stone); }
+  .nf-emisor span { color: var(--ink); }
+  .nf-suggest { position: absolute; top: 100%; left: 0; right: 0; background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-md); margin-top: 4px; max-height: 220px; overflow-y: auto; z-index: 300; display: none; box-shadow: var(--shadow-lg); }
+  .nf-suggest.show { display: block; }
+  .nf-suggest-item { padding: 10px 14px; cursor: pointer; border-bottom: 1px solid var(--line); }
+  .nf-suggest-item:last-child { border: 0; }
+  .nf-suggest-item:hover { background: var(--bone); }
+  .nf-suggest-item .n { font-size: 0.9rem; color: var(--ink); }
+  .nf-suggest-item .m { font-family: var(--mono); font-size: 0.76rem; color: var(--stone); margin-top: 2px; }
+  /* Styled selects inside panel */
+  .nf-body select { appearance: none; -webkit-appearance: none; background-color: var(--paper); background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B6B5E' stroke-width='2.2' stroke-linecap='round'><polyline points='6 9 12 15 18 9'/></svg>"); background-repeat: no-repeat; background-position: right 12px center; background-size: 12px; border: 1px solid var(--line); border-radius: var(--r-sm); padding: 10px 36px 10px 12px; font-family: var(--sans); font-size: 0.88rem; color: var(--ink); width: 100%; cursor: pointer; transition: border-color 120ms; }
+  .nf-body select:hover { border-color: var(--slate); }
+  .nf-body select:focus { outline: none; border-color: var(--ink); box-shadow: 0 0 0 3px rgba(47,125,79,0.1); }
+  .nf-body select optgroup { font-family: var(--mono); font-size: 0.78rem; color: var(--stone); font-style: normal; }
+  .nf-items-t { width: 100%; border-collapse: collapse; min-width: 500px; }
+  .nf-items-t thead th { font-family: var(--mono); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--stone); padding: 8px 5px; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  .nf-items-t thead th.r { text-align: right; }
+  .nf-items-t tbody tr + tr { border-top: 1px solid var(--line); }
+  .nf-items-t tbody td { padding: 6px 5px; vertical-align: top; }
+  .nf-items-t select { appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%236B6B5E' stroke-width='2'><polyline points='6 9 12 15 18 9'/></svg>"); background-repeat: no-repeat; background-position: right 6px center; background-color: var(--paper); background-size: 10px; border: 1px solid var(--line); border-radius: 4px; padding: 7px 22px 7px 8px; font-family: var(--mono); font-size: 0.76rem; color: var(--ink); width: 100%; cursor: pointer; }
+  .nf-clave { font-family: var(--mono); font-size: 0.7rem; color: var(--stone); border: 1px solid transparent; background: transparent; padding: 2px 5px; border-radius: 3px; width: 100%; margin-top: 3px; outline: none; }
+  .nf-clave:focus { border-color: var(--line); background: var(--bone); }
+  .nf-clave::placeholder { color: var(--line-2); }
+  .nf-add-row { background: transparent; border: 1px dashed var(--line-2); color: var(--stone); padding: 9px; border-radius: var(--r-sm); cursor: pointer; font-family: var(--sans); font-size: 0.83rem; width: 100%; margin-top: 8px; transition: all 120ms; }
+  .nf-add-row:hover { border-color: var(--ink); color: var(--ink); background: var(--bone); }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <aside class="sidebar"></aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="title">
+        <div class="eyebrow">Facturación</div>
+        <h1 style="margin-top: 8px;">Facturas</h1>
+        <p>Gestiona, clasifica y da seguimiento a todas tus facturas emitidas y recibidas.</p>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn btn-secondary btn-sm" onclick="exportSelected()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Exportar
+        </button>
+        <button class="btn btn-primary btn-sm" onclick="openNF()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Nueva factura
+        </button>
+      </div>
+    </div>
+
+    <div class="data-source">
+      <div class="left">
+        <span class="sync-dot"></span>
+        <span><strong style="color: var(--ink);">Sincronizado con SAT</strong> · <span id="totalCount">0</span> facturas · <span id="bankCount">0</span> bancos conectados</span>
+      </div>
+      <div class="right">Última actualización: hace 12 min</div>
+    </div>
+
+    <div class="status-tabs" id="statusTabs"></div>
+
+    <div class="filter-bar">
+      <div class="search" style="width: 320px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input type="text" placeholder="Buscar por folio, cliente o RFC…" id="searchFilter">
+      </div>
+      <select class="filter" id="typeFilter">
+        <option value="">Emitidas y recibidas</option>
+        <option value="emitted">Solo emitidas</option>
+        <option value="received">Solo recibidas</option>
+      </select>
+      <select class="filter" id="clientFilter">
+        <option value="">Todos los clientes</option>
+      </select>
+      <select class="filter" id="periodFilter">
+        <option value="">Todo el periodo</option>
+        <option value="thismonth">Este mes</option>
+        <option value="lastmonth">Mes pasado</option>
+        <option value="thisquarter">Este trimestre</option>
+        <option value="thisyear">Este año</option>
+      </select>
+      <div class="amount-range">
+        <span class="amount-range-label">$</span>
+        <input type="number" class="amount-input" id="amountMin" placeholder="Mín" min="0">
+        <span class="amount-range-sep">—</span>
+        <input type="number" class="amount-input" id="amountMax" placeholder="Máx" min="0">
+      </div>
+      <div class="filter-sep"></div>
+      <button class="filter" id="clearBtn" onclick="resetFilters()" style="display:none">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        Limpiar filtros
+      </button>
+    </div>
+
+    <div class="bulk-bar" id="bulkBar">
+      <div><span class="count-sel" id="selCount">0</span> facturas seleccionadas</div>
+      <div class="bulk-actions">
+        <button class="bulk-btn" onclick="bulkAction('remind')">Enviar recordatorio</button>
+        <button class="bulk-btn" onclick="bulkAction('paid')">Marcar como pagadas</button>
+        <button class="bulk-btn" onclick="bulkAction('export')">Exportar CSV</button>
+        <button class="bulk-btn" onclick="bulkAction('delete')" style="color: #FFAA99;">Eliminar</button>
+      </div>
+    </div>
+
+    <div id="clientSections"></div>
+  </main>
+</div>
+
+<!-- ── Panel: Nueva factura ──────────────────────────────── -->
+<div class="nf-overlay" id="nfOverlay" onclick="closeNF()"></div>
+<div class="nf-sheet" id="nfSheet">
+  <div class="nf-head">
+    <div class="nf-head-left">
+      <div class="nf-eyebrow">CFDI 4.0 · Timbrado automático</div>
+      <h2>Nueva factura</h2>
+    </div>
+    <button class="nf-x" onclick="closeNF()" aria-label="Cerrar">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="nf-body">
+
+    <!-- Emisor -->
+    <div class="nf-sect">
+      <div class="nf-sect-h">Emisor</div>
+      <div class="nf-sect-d">Datos fiscales de tu empresa — solo lectura</div>
+      <div class="nf-emisor" id="nfEmisor"></div>
+    </div>
+
+    <!-- Receptor -->
+    <div class="nf-sect">
+      <div class="nf-sect-h">Receptor</div>
+      <div class="nf-sect-d">Selecciona el cliente al que emites esta factura</div>
+      <div class="form-row">
+        <div class="form-field" style="position:relative;">
+          <label>Razón social</label>
+          <input type="text" id="nfClientSearch" placeholder="Nombre o RFC…" autocomplete="off">
+          <div class="nf-suggest" id="nfSuggest"></div>
+          <div class="form-help" id="nfClientInfo" style="display:none;"></div>
+        </div>
+        <div class="form-field">
+          <label>RFC receptor</label>
+          <input type="text" id="nfClientRfc" disabled>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label>Régimen fiscal del receptor</label>
+          <select id="nfRegimen">
+            <option value="601" selected>601 - General de Ley Personas Morales</option>
+            <option value="603">603 - Personas Morales sin Fines Lucrativos</option>
+            <option value="605">605 - Sueldos y Salarios</option>
+            <option value="606">606 - Arrendamiento</option>
+            <option value="607">607 - Enajenación o Adquisición de Bienes</option>
+            <option value="612">612 - Personas Físicas con Act. Empresariales</option>
+            <option value="616">616 - Sin obligaciones fiscales</option>
+            <option value="621">621 - Incorporación Fiscal</option>
+            <option value="626">626 - RESICO</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label>Uso de CFDI</label>
+          <select id="nfCfdi">
+            <optgroup label="G — Adquisiciones y gastos">
+              <option value="G01">G01 - Adquisición de mercancias</option>
+              <option value="G02">G02 - Devoluciones y descuentos</option>
+              <option value="G03" selected>G03 - Gastos en general</option>
+            </optgroup>
+            <optgroup label="I — Inversiones">
+              <option value="I01">I01 - Construcciones</option>
+              <option value="I02">I02 - Mobilario y equipo de oficina</option>
+              <option value="I03">I03 - Equipo de transporte</option>
+              <option value="I04">I04 - Equipo de cómputo</option>
+              <option value="I05">I05 - Dados, troqueles, moldes</option>
+              <option value="I06">I06 - Comunicaciones telefónicas</option>
+              <option value="I08">I08 - Otra maquinaria y equipo</option>
+            </optgroup>
+            <optgroup label="D — Deducciones personales">
+              <option value="D01">D01 - Honorarios médicos</option>
+              <option value="D02">D02 - Gastos médicos por incapacidad</option>
+              <option value="D03">D03 - Gastos funerales</option>
+              <option value="D04">D04 - Donativos</option>
+              <option value="D05">D05 - Intereses reales hipotecarios</option>
+              <option value="D06">D06 - Aportaciones al SAR</option>
+              <option value="D07">D07 - Seguros gastos médicos</option>
+              <option value="D08">D08 - Transportación escolar</option>
+              <option value="D09">D09 - Ahorro / pensiones</option>
+              <option value="D10">D10 - Servicios educativos</option>
+            </optgroup>
+            <optgroup label="Otros">
+              <option value="S01">S01 - Sin efectos fiscales</option>
+              <option value="CP01">CP01 - Pagos</option>
+            </optgroup>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Datos de factura -->
+    <div class="nf-sect">
+      <div class="nf-sect-h">Datos de la factura</div>
+      <div class="nf-sect-d" id="nfFolioHint">Se actualizará con las iniciales del cliente al seleccionarlo</div>
+      <div class="form-row three">
+        <div class="form-field">
+          <label>Folio</label>
+          <input type="text" id="nfFolio" disabled>
+        </div>
+        <div class="form-field">
+          <label>Fecha de emisión</label>
+          <input type="date" id="nfIssue">
+        </div>
+        <div class="form-field">
+          <label>Fecha de vencimiento</label>
+          <input type="date" id="nfDue">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label>Método de pago</label>
+          <select id="nfMetodo">
+            <option value="PUE">PUE - Pago en una exhibición</option>
+            <option value="PPD" selected>PPD - Pago en parcialidades o diferido</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label>Forma de pago</label>
+          <select id="nfForma">
+            <option value="01">01 - Efectivo</option>
+            <option value="02">02 - Cheque nominativo</option>
+            <option value="03" selected>03 - Transferencia electrónica (SPEI)</option>
+            <option value="04">04 - Tarjeta de crédito</option>
+            <option value="28">28 - Tarjeta de débito</option>
+            <option value="05">05 - Monedero electrónico</option>
+            <option value="17">17 - Compensación</option>
+            <option value="30">30 - Aplicación de anticipos</option>
+            <option value="99">99 - Por definir</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row full">
+        <div class="form-field">
+          <label>Condiciones de pago <span style="color:var(--stone);font-size:0.78rem;font-weight:400;">(opcional)</span></label>
+          <input type="text" id="nfCondiciones" placeholder="Neto 30 días, 2/10 neto 30, Contado…">
+        </div>
+      </div>
+    </div>
+
+    <!-- Conceptos -->
+    <div class="nf-sect">
+      <div class="nf-sect-h">Conceptos</div>
+      <div class="nf-sect-d">IVA 16% automático · Dto. antes del impuesto · Clave SAT requerida para timbrado</div>
+      <div style="overflow-x:auto;">
+        <table class="nf-items-t">
+          <thead><tr>
+            <th style="width:28%;">Descripción</th>
+            <th style="width:10%;">Cant.</th>
+            <th style="width:18%;">Unidad</th>
+            <th class="r" style="width:14%;">P. Unit.</th>
+            <th class="r" style="width:9%;">Dto %</th>
+            <th class="r" style="width:13%;">Importe</th>
+            <th style="width:4%;"></th>
+          </tr></thead>
+          <tbody id="nfItemsBody"></tbody>
+        </table>
+      </div>
+      <button class="nf-add-row" onclick="nfAddRow()">+ Agregar concepto</button>
+      <div class="totals-panel">
+        <div class="totals-row"><span>Subtotal bruto</span><span id="nfTS">$0.00</span></div>
+        <div class="totals-row" id="nfTDR" style="display:none;"><span style="color:var(--stone);">Descuentos</span><span id="nfTD" style="color:var(--success);"></span></div>
+        <div class="totals-row"><span>IVA 16%</span><span id="nfTI">$0.00</span></div>
+        <div class="totals-row grand"><span>Total MXN</span><span id="nfTT">$0.00</span></div>
+      </div>
+    </div>
+
+    <!-- Referencias -->
+    <div class="nf-sect">
+      <div class="nf-sect-h">Referencias</div>
+      <div class="form-row">
+        <div class="form-field">
+          <label>ID de pedido <span style="color:var(--stone);font-size:0.78rem;font-weight:400;">(opcional)</span></label>
+          <input type="text" id="nfPedido" placeholder="PO-12345">
+        </div>
+        <div class="form-field">
+          <label>Folio de entrega <span style="color:var(--stone);font-size:0.78rem;font-weight:400;">(opcional)</span></label>
+          <input type="text" id="nfFolioEntrega" placeholder="REM-0099">
+        </div>
+      </div>
+    </div>
+
+    <!-- Observaciones -->
+    <div class="nf-sect">
+      <div class="nf-sect-h">Observaciones</div>
+      <div class="nf-sect-d">Aparece impresa en la factura enviada al cliente</div>
+      <div class="form-field">
+        <textarea id="nfObservaciones" style="min-height:60px;" placeholder="Indicaciones de entrega, referencias, acuerdos…"></textarea>
+      </div>
+    </div>
+
+    <!-- Notas -->
+    <div class="nf-sect">
+      <div class="nf-sect-h">Notas internas</div>
+      <div class="nf-sect-d">No aparece en la factura enviada al cliente</div>
+      <div class="form-field">
+        <textarea id="nfNotes" style="min-height:60px;" placeholder="Orden de compra, número de contrato…"></textarea>
+      </div>
+    </div>
+
+  </div><!-- /.nf-body -->
+  <div class="nf-foot">
+    <div class="nf-foot-tot">Total <strong id="nfFootTot">$0.00 MXN</strong></div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-secondary btn-sm" onclick="nfSave('draft')">Guardar borrador</button>
+      <button class="btn btn-primary btn-sm" onclick="nfSave('sent')">Timbrar y enviar</button>
+    </div>
+  </div>
+</div>
+<!-- ── fin panel ──────────────────────────────────────────── -->
+
+<script src="app.js"></script>
+<script>
+(function () {
+  const { Store, fmt, mountSidebar, toast, Modal, clientInitials } = Jobby;
+  const nextFolioForClient = Jobby.nextFolioForClient;
+  mountSidebar('facturas');
+
+  const state = {
+    status: 'all',
+    search: '',
+    type: '',
+    client: '',
+    period: '',
+    amountMin: '',
+    amountMax: '',
+    page: 1
+  };
+
+  // URL search param
+  const urlParams = new URLSearchParams(location.search);
+  if (urlParams.get('q')) {
+    state.search = urlParams.get('q');
+    document.getElementById('searchFilter').value = state.search;
+  }
+  if (urlParams.get('new') === '1') {
+    const preClient = urlParams.get('client');
+    setTimeout(() => {
+      if (window.openNF) {
+        window.openNF();
+        if (preClient) setTimeout(() => window.nfPickClient && window.nfPickClient(preClient), 80);
+      }
+    }, 150);
+  }
+
+  // Populate client filter
+  const clientSel = document.getElementById('clientFilter');
+  Store.all('clients').filter(c => c.status === 'active' || !c.status).forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c.id; opt.textContent = c.name;
+    clientSel.appendChild(opt);
+  });
+
+  // Bank count
+  document.getElementById('bankCount').textContent = Store.company.banksConnected.length;
+
+  function filterForClient(clientId) {
+    return Store.all('invoices').filter(i => {
+      if (clientId === null) {
+        if (i.clientId) return false;
+      } else {
+        if (i.clientId !== clientId) return false;
+      }
+      if (state.status !== 'all' && i.status !== state.status) return false;
+      if (state.type && i.type !== state.type) return false;
+      if (state.period) {
+        const now = new Date();
+        const issue = new Date(i.issueDate + 'T12:00:00');
+        if (state.period === 'thismonth' && (issue.getMonth() !== now.getMonth() || issue.getFullYear() !== now.getFullYear())) return false;
+        if (state.period === 'lastmonth') {
+          const last = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+          if (issue.getMonth() !== last.getMonth() || issue.getFullYear() !== last.getFullYear()) return false;
+        }
+        if (state.period === 'thisyear' && issue.getFullYear() !== now.getFullYear()) return false;
+        if (state.period === 'thisquarter') {
+          const q = Math.floor(now.getMonth() / 3);
+          const iq = Math.floor(issue.getMonth() / 3);
+          if (q !== iq || issue.getFullYear() !== now.getFullYear()) return false;
+        }
+      }
+      if (state.search) {
+        const q = state.search.toLowerCase();
+        const client = i.clientId ? Store.find('clients', i.clientId) : null;
+        const clientName = client?.name || i.supplierName || '';
+        const clientRfc = client?.rfc || '';
+        if (!i.folio.toLowerCase().includes(q) && !clientName.toLowerCase().includes(q) && !clientRfc.toLowerCase().includes(q)) return false;
+      }
+      if (state.amountMin !== '' && i.total < +state.amountMin) return false;
+      if (state.amountMax !== '' && i.total > +state.amountMax) return false;
+      return true;
+    }).sort((a, b) => b.issueDate.localeCompare(a.issueDate));
+  }
+
+  function renderInvTable(invs) {
+    if (!invs.length) return '';
+    const rows = invs.map(i => {
+      const client = i.clientId ? Store.find('clients', i.clientId) : null;
+      const dueStyle = i.status === 'overdue' ? 'style="color:var(--danger);"' : '';
+      const days = fmt.daysUntil(i.dueDate);
+      const badgeLabel = i.status === 'overdue' ? `Vencida · ${Math.abs(days)}d` : fmt.statusLabel(i.status);
+      const badgeClass = i.status === 'paid' ? 'paid' : i.status === 'overdue' ? 'overdue' : i.status === 'pending' ? 'pending' : i.status === 'sent' ? 'sent' : 'draft';
+      const typeLabel = i.type === 'received' ? '<span class="chip" style="margin-left:8px;">Recibida</span>' : '';
+      return `<tr class="clickable" data-id="${i.id}">
+        <td class="chk-col" onclick="event.stopPropagation()"><input type="checkbox" class="chk row-chk" data-id="${i.id}"></td>
+        <td class="mono">${i.folio}${typeLabel}</td>
+        <td class="mono">${fmt.date(i.issueDate)}</td>
+        <td class="mono" ${dueStyle}>${fmt.date(i.dueDate)}</td>
+        <td><span class="badge badge-${badgeClass}">${badgeLabel}</span></td>
+        <td class="num">${fmt.mxn(i.total)}</td>
+        <td onclick="event.stopPropagation()"><button class="rm-btn" style="opacity:1;" onclick="rowMenu(event,'${i.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button></td>
+      </tr>`;
+    }).join('');
+    return `<div class="inv-table-wrap"><table class="inv-table">
+      <thead><tr>
+        <th class="chk-col"></th>
+        <th>Folio</th><th>Emisión</th><th>Vencimiento</th><th>Status</th>
+        <th class="num">Total</th><th></th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>`;
+  }
+
+  function renderFcSection(clientId, forecasts) {
+    const items = forecasts.map(f => {
+      const monthLabel = f.month ? new Date(f.month + '-15').toLocaleDateString('es-MX', {month:'short', year:'numeric'}) : '';
+      return `<div class="fc-item">
+        ${f.service ? `<span class="fc-item-svc">${f.service}</span>` : ''}
+        <span class="fc-item-concept">${f.concept || 'Sin concepto'}</span>
+        ${monthLabel ? `<span class="fc-item-month">${monthLabel}</span>` : ''}
+        <span class="fc-item-amt">${fmt.mxn(f.amount)}</span>
+      </div>`;
+    }).join('');
+    return `<div class="fc-section">
+      <div class="fc-section-head">
+        <span class="fc-section-label">Proyecciones pendientes · ${forecasts.length}</span>
+      </div>
+      ${items}
+    </div>`;
+  }
+
+  function renderClientSections() {
+    const container = document.getElementById('clientSections');
+    let clients = Store.all('clients').filter(c => c.status === 'active' || !c.status);
+    if (state.client) clients = clients.filter(c => c.id === state.client);
+
+    let html = '';
+    let hasContent = false;
+
+    clients.forEach(client => {
+      const invs = filterForClient(client.id);
+      const forecasts = Store.all('forecasts').filter(f => f.clientId === client.id);
+      // When a specific status is active, only show clients with matching invoices
+      const hasInvs = invs.length > 0;
+      const hasFc = forecasts.length > 0;
+      if (!hasInvs && (state.status !== 'all' || !hasFc)) return;
+      hasContent = true;
+
+      const inits = clientInitials(client.name);
+      const totalInv = invs.reduce((s, i) => s + i.total, 0);
+      const pending = invs.filter(i => ['pending','overdue','sent'].includes(i.status)).reduce((s, i) => s + i.total, 0);
+      const cid = client.id;
+
+      html += `<div class="cli-card">
+        <div class="cc-head" onclick="toggleCard('${cid}')">
+          <div class="cc-avatar">${inits}</div>
+          <div class="cc-info">
+            <div class="cc-name">${client.name}</div>
+            <div class="cc-sub">${client.rfc || 'Sin RFC'} · ${invs.length} factura${invs.length !== 1 ? 's' : ''}</div>
+          </div>
+          <div class="cc-stats">
+            ${hasInvs ? `<div class="cc-stat">Total <strong>${fmt.mxn(totalInv)}</strong></div>` : ''}
+            ${pending > 0 ? `<div class="cc-stat" style="color:var(--amber);">Por cobrar <strong>${fmt.mxn(pending)}</strong></div>` : ''}
+            ${hasFc ? `<div class="cc-stat" style="color:#0F5132;">Proyecciones <strong>${forecasts.length}</strong></div>` : ''}
+          </div>
+          <div class="cc-actions" onclick="event.stopPropagation()">
+            ${hasFc ? `<button class="cc-bill-btn" onclick="openBillModalFact('${cid}')">Facturar proyecciones</button>` : ''}
+            <button class="cc-nf-btn" onclick="openNFForClient('${cid}')">+ Nueva factura</button>
+          </div>
+          <svg class="cc-chevron" id="chev-${cid}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="cc-body" id="ccb-${cid}">
+          ${renderInvTable(invs)}
+          ${hasFc ? renderFcSection(cid, forecasts) : ''}
+        </div>
+      </div>`;
+    });
+
+    // Received invoices (no clientId) in a separate section
+    if (!state.client && state.type !== 'emitted') {
+      const received = filterForClient(null).filter(i => i.type === 'received');
+      if (received.length > 0) {
+        hasContent = true;
+        const totalR = received.reduce((s, i) => s + i.total, 0);
+        html += `<div class="cli-card">
+          <div class="cc-head" onclick="toggleCard('received')">
+            <div class="cc-avatar" style="background:var(--stone);">PR</div>
+            <div class="cc-info">
+              <div class="cc-name">Proveedores / Recibidas</div>
+              <div class="cc-sub">${received.length} factura${received.length !== 1 ? 's' : ''} recibidas</div>
+            </div>
+            <div class="cc-stats"><div class="cc-stat">Total <strong>${fmt.mxn(totalR)}</strong></div></div>
+            <div class="cc-actions" onclick="event.stopPropagation()"></div>
+            <svg class="cc-chevron" id="chev-received" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+          <div class="cc-body" id="ccb-received">${renderInvTable(received)}</div>
+        </div>`;
+      }
+    }
+
+    if (!hasContent) {
+      container.innerHTML = `<div class="empty"><div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><h4>Sin resultados</h4><p>No hay facturas ni proyecciones. Intenta limpiar filtros o crear una nueva.</p><button class="btn btn-primary btn-sm" onclick="openNF()">Nueva factura</button></div>`;
+      return;
+    }
+
+    container.innerHTML = html;
+    document.querySelectorAll('.inv-table tr.clickable').forEach(tr => {
+      tr.addEventListener('click', () => location.href = 'factura-detalle.html?id=' + tr.dataset.id);
+    });
+    document.querySelectorAll('.row-chk').forEach(c => c.addEventListener('change', updateBulk));
+  }
+
+  window.toggleCard = (id) => {
+    const body = document.getElementById('ccb-' + id);
+    const chev = document.getElementById('chev-' + id);
+    if (body) { body.classList.toggle('open'); chev.classList.toggle('open'); }
+  };
+
+  function renderTabs() {
+    const all = Store.all('invoices');
+    const counts = {
+      all:      all.length,
+      paid:     all.filter(i => i.status === 'paid').length,
+      pending:  all.filter(i => i.status === 'pending').length,
+      sent:     all.filter(i => i.status === 'sent').length,
+      overdue:  all.filter(i => i.status === 'overdue').length,
+      draft:    all.filter(i => i.status === 'draft').length
+    };
+    const tabs = [
+      ['all', 'Todas'], ['paid', 'Pagadas'], ['pending', 'Pendientes'],
+      ['sent', 'Enviadas'], ['overdue', 'Vencidas'], ['draft', 'Borradores']
+    ];
+    document.getElementById('statusTabs').innerHTML = tabs.map(([k, l]) =>
+      `<button class="stab ${state.status === k ? 'active' : ''}" data-s="${k}">${l} <span class="count">${counts[k]}</span></button>`
+    ).join('');
+    document.querySelectorAll('.stab').forEach(t => t.addEventListener('click', () => {
+      state.status = t.dataset.s; state.page = 1; render();
+    }));
+  }
+
+  function render() {
+    renderTabs();
+    document.getElementById('clearBtn').style.display = hasActiveFilters() ? '' : 'none';
+    document.getElementById('totalCount').textContent = Store.all('invoices').length;
+    renderClientSections();
+    updateBulk();
+  }
+
+  function updateBulk() {
+    const checks = document.querySelectorAll('.row-chk');
+    const n = [...checks].filter(r => r.checked).length;
+    document.getElementById('selCount').textContent = n;
+    document.getElementById('bulkBar').classList.toggle('show', n > 0);
+  }
+
+  document.getElementById('searchFilter').addEventListener('input', e => { state.search = e.target.value; state.page = 1; render(); });
+  document.getElementById('typeFilter').addEventListener('change', e => { state.type = e.target.value; state.page = 1; render(); });
+  document.getElementById('clientFilter').addEventListener('change', e => { state.client = e.target.value; state.page = 1; render(); });
+  document.getElementById('periodFilter').addEventListener('change', e => { state.period = e.target.value; state.page = 1; render(); });
+
+  let amtTimer;
+  document.getElementById('amountMin').addEventListener('input', e => { clearTimeout(amtTimer); amtTimer = setTimeout(() => { state.amountMin = e.target.value; state.page = 1; render(); }, 400); });
+  document.getElementById('amountMax').addEventListener('input', e => { clearTimeout(amtTimer); amtTimer = setTimeout(() => { state.amountMax = e.target.value; state.page = 1; render(); }, 400); });
+
+  function hasActiveFilters() {
+    return state.search || state.type || state.client || state.period || state.amountMin !== '' || state.amountMax !== '';
+  }
+
+  window.resetFilters = () => {
+    state.status = 'all'; state.search = ''; state.type = ''; state.client = ''; state.period = '';
+    state.amountMin = ''; state.amountMax = ''; state.page = 1;
+    document.getElementById('searchFilter').value = '';
+    document.getElementById('typeFilter').value = '';
+    document.getElementById('clientFilter').value = '';
+    document.getElementById('periodFilter').value = '';
+    document.getElementById('amountMin').value = '';
+    document.getElementById('amountMax').value = '';
+    render();
+  };
+
+  window.rowMenu = (e, id) => {
+    e.stopPropagation();
+    const inv = Store.find('invoices', id);
+    Modal.open(`
+      <div class="modal-head"><div><h3>Factura ${inv.folio}</h3><div class="sub">¿Qué quieres hacer?</div></div>
+        <button class="modal-close" onclick="Jobby.Modal.close()">✕</button></div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <button class="btn btn-ghost" style="justify-content:flex-start;" onclick="location.href='factura-detalle.html?id=${id}'">Ver detalle</button>
+        ${inv.status !== 'paid' && inv.status !== 'cancelled' ? `<button class="btn btn-ghost" style="justify-content:flex-start;" onclick="markPaid('${id}')">Marcar como pagada</button>` : ''}
+        ${inv.type === 'emitted' && inv.status === 'overdue' ? `<button class="btn btn-ghost" style="justify-content:flex-start;" onclick="sendReminder('${id}')">Enviar recordatorio</button>` : ''}
+        <button class="btn btn-ghost" style="justify-content:flex-start;" onclick="duplicateInv('${id}')">Duplicar</button>
+        <button class="btn btn-ghost" style="justify-content:flex-start; color: var(--danger);" onclick="deleteInv('${id}')">Eliminar</button>
+      </div>`, { width: '340px' });
+  };
+
+  const BANK_LIST = ['Bank of America', 'Kapital', 'BBVA', 'Banamex', 'Banorte', 'Santander', 'HSBC', 'Afirme', 'Otro'];
+
+  window.markPaid = (id) => {
+    const inv = Store.find('invoices', id);
+    const today = new Date().toISOString().slice(0, 10);
+    const bankOpts = BANK_LIST.map(b => `<option value="${b}">${b}</option>`).join('');
+    Modal.open(`
+      <div class="modal-head">
+        <div><h3>Registrar pago</h3><div class="sub">Factura ${inv.folio} · ${fmt.mxn(inv.total)}</div></div>
+        <button class="modal-close" onclick="Jobby.Modal.close()">✕</button>
+      </div>
+      <div class="form-row">
+        <div class="form-field"><label>Fecha de cobro</label><input type="date" id="pDate" value="${today}"></div>
+        <div class="form-field"><label>Banco que recibió el pago</label><select id="pBank"><option value="">— Sin banco —</option>${bankOpts}</select></div>
+      </div>
+      <div class="form-row">
+        <div class="form-field"><label>Referencia / Confirmación</label><input type="text" id="pRef" placeholder="SPEI-XXXXXXXX, número de wire…"></div>
+        <div class="form-field"><label>Monto cobrado MXN</label><input type="number" id="pAmt" value="${inv.total}" step="0.01"></div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-ghost btn-sm" onclick="Jobby.Modal.close()">Cancelar</button>
+        <button class="btn btn-primary btn-sm" onclick="confirmMarkPaid('${id}')">Confirmar pago</button>
+      </div>`, { width: '480px', closeOnBackdrop: false });
+  };
+
+  window.confirmMarkPaid = (id) => {
+    const inv = Store.find('invoices', id);
+    const amt = +document.getElementById('pAmt').value;
+    const bank = document.getElementById('pBank').value || 'N/A';
+    const ref = document.getElementById('pRef').value.trim() || ('MANUAL-' + Date.now());
+    const date = document.getElementById('pDate').value;
+    Store.update('invoices', id, { status: 'paid' });
+    Store.add('payments', { invoiceId: id, date, amount: amt, method: 'Manual', reference: ref, bank });
+    Store.logActivity('Marcó como pagada', inv.folio);
+    Modal.close();
+    toast(`Factura ${inv.folio} marcada como pagada — ${bank}`);
+    render();
+  };
+
+  window.sendReminder = (id) => {
+    const inv = Store.find('invoices', id);
+    Store.logActivity('Envió recordatorio', inv.folio);
+    Modal.close();
+    toast(`Recordatorio enviado por correo y WhatsApp`);
+  };
+
+  window.duplicateInv = (id) => {
+    const inv = Store.find('invoices', id);
+    const newFolio = nextFolioForClient(inv.clientId || null);
+    const newInv = { ...inv, id: undefined, folio: newFolio, status: 'draft', issueDate: new Date().toISOString().slice(0, 10), dueDate: Jobby.addDays(new Date().toISOString().slice(0, 10), 30) };
+    Store.add('invoices', newInv);
+    Store.logActivity('Duplicó factura', newInv.folio);
+    Modal.close();
+    toast(`Factura duplicada como ${newInv.folio}`);
+    render();
+  };
+
+  window.deleteInv = (id) => {
+    const inv = Store.find('invoices', id);
+    if (confirm(`¿Eliminar factura ${inv.folio}? Esta acción no se puede deshacer.`)) {
+      Store.remove('invoices', id);
+      Store.logActivity('Eliminó factura', inv.folio);
+      Modal.close();
+      toast(`Factura ${inv.folio} eliminada`, 'error');
+      render();
+    }
+  };
+
+  window.bulkAction = (action) => {
+    const ids = [...document.querySelectorAll('.row-chk:checked')].map(c => c.dataset.id);
+    if (ids.length === 0) return;
+    if (action === 'paid') {
+      ids.forEach(id => {
+        const inv = Store.find('invoices', id);
+        if (inv.status !== 'paid' && inv.status !== 'cancelled') {
+          Store.update('invoices', id, { status: 'paid' });
+          Store.add('payments', { invoiceId: id, date: new Date().toISOString().slice(0, 10), amount: inv.total, method: 'Manual', reference: 'BULK-' + Date.now(), bank: 'N/A' });
+        }
+      });
+      toast(`${ids.length} facturas marcadas como pagadas`);
+      render();
+    } else if (action === 'remind') {
+      Store.logActivity('Envió recordatorios masivos', ids.length + ' facturas');
+      toast(`${ids.length} recordatorios enviados por WhatsApp`);
+    } else if (action === 'delete') {
+      if (confirm(`¿Eliminar ${ids.length} facturas? Esta acción no se puede deshacer.`)) {
+        ids.forEach(id => Store.remove('invoices', id));
+        toast(`${ids.length} facturas eliminadas`, 'error');
+        render();
+      }
+    } else if (action === 'export') {
+      exportSelected();
+    }
+  };
+
+  window.exportSelected = () => {
+    const ids = [...document.querySelectorAll('.row-chk:checked')].map(c => c.dataset.id);
+    const allInvs = Store.all('invoices');
+    const rows = ids.length > 0 ? ids.map(id => Store.find('invoices', id)) : allInvs;
+    const csv = [['Folio', 'Tipo', 'Cliente/Proveedor', 'RFC', 'Emisión', 'Vencimiento', 'Subtotal', 'IVA', 'Total', 'Status'], ...rows.map(i => {
+      const c = i.clientId ? Store.find('clients', i.clientId) : null;
+      return [i.folio, i.type, c?.name || i.supplierName, c?.rfc || '', i.issueDate, i.dueDate, i.subtotal, i.iva, i.total, i.status];
+    })].map(r => r.join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'jobby-facturas-' + new Date().toISOString().slice(0, 10) + '.csv'; a.click();
+    URL.revokeObjectURL(url);
+    toast(`${rows.length} facturas exportadas como CSV`);
+  };
+
+  // ── Bill forecasts from facturas page ──────────────────
+  window.openBillModalFact = (clientId) => {
+    const client = Store.find('clients', clientId);
+    const forecasts = Store.all('forecasts').filter(f => f.clientId === clientId);
+    if (!forecasts.length) { toast('No hay proyecciones para facturar', 'error'); return; }
+
+    const groups = {};
+    const groupOrder = [];
+    forecasts.forEach(f => {
+      const key = f.service || '(sin servicio)';
+      if (!groups[key]) { groups[key] = []; groupOrder.push(key); }
+      groups[key].push(f);
+    });
+
+    const today = new Date().toISOString().slice(0, 10);
+    const folio = nextFolioForClient(clientId);
+    const dueDate = Jobby.addDays(today, client.paymentTerms || 30);
+
+    const groupsHtml = groupOrder.map((key, gi) => {
+      const items = groups[key];
+      const svcTotal = items.reduce((s, f) => s + f.amount, 0);
+      const rows = items.map(f => {
+        const monthLabel = f.month ? new Date(f.month + '-15').toLocaleDateString('es-MX', {month:'short', year:'numeric'}) : '';
+        return `<div style="display:flex;align-items:center;gap:10px;padding:5px 0 5px 10px;">
+          <input type="checkbox" class="chk bfc-chk" data-fcid="${f.id}" data-group="${gi}" data-amt="${f.amount}" checked onchange="bfcUpdateTotals()">
+          <span style="flex:1;font-size:0.84rem;color:var(--ink);">${f.concept || f.service || 'Proyección'}</span>
+          ${monthLabel ? `<span style="font-family:var(--mono);font-size:0.75rem;color:var(--stone);flex-shrink:0;">${monthLabel}</span>` : ''}
+          <span style="font-family:var(--mono);font-size:0.82rem;color:var(--ink);min-width:80px;text-align:right;flex-shrink:0;">${fmt.mxn(f.amount)}</span>
+        </div>`;
+      }).join('');
+      return `<div style="margin-bottom:10px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:var(--bone);border-radius:6px;margin-bottom:4px;">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-family:var(--mono);font-size:0.68rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--stone);font-weight:600;">
+            <input type="checkbox" class="chk bfc-svc-chk" data-group="${gi}" checked onchange="bfcToggleSvc(${gi})"> ${key}
+          </label>
+          <span style="font-family:var(--mono);font-size:0.76rem;color:var(--stone);">${fmt.mxn(svcTotal)}</span>
+        </div>
+        ${rows}
+      </div>`;
+    }).join('');
+
+    const grandTotal = forecasts.reduce((s, f) => s + f.amount, 0);
+    Modal.open(`
+      <div class="modal-head">
+        <div><h3>Facturar proyecciones</h3><div class="sub">${client.name}</div></div>
+        <button class="modal-close" onclick="Jobby.Modal.close()">✕</button>
+      </div>
+      <div style="max-height:260px;overflow-y:auto;padding:0 4px 10px;">
+        <div style="padding:4px 0 10px;">
+          <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:0.84rem;color:var(--ink);">
+            <input type="checkbox" class="chk" id="bfc-all" checked onchange="bfcToggleAll(this)"> Seleccionar todo
+          </label>
+        </div>
+        ${groupsHtml}
+      </div>
+      <div style="padding:8px 0 4px;display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+        <div style="padding-bottom:8px;">
+          <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-family:var(--mono);font-size:0.73rem;">
+            <input type="checkbox" class="chk" id="bfc-iva" onchange="bfcUpdateTotals()"> Aplicar IVA 16%
+          </label>
+        </div>
+        <div style="display:flex;gap:24px;font-family:var(--mono);font-size:0.78rem;color:var(--stone);">
+          <span>Subtotal</span><span id="bfcSubtotal">${fmt.mxn(grandTotal)}</span>
+        </div>
+        <div style="display:none;gap:24px;font-family:var(--mono);font-size:0.78rem;color:var(--stone);" id="bfcIvaRow">
+          <span>IVA 16%</span><span id="bfcIvaAmt">$0.00</span>
+        </div>
+        <div style="display:flex;gap:24px;font-family:var(--mono);font-size:0.9rem;color:var(--ink);font-weight:600;border-top:1px solid var(--line);padding-top:6px;margin-top:2px;">
+          <span>Total</span><span id="bfcTotal">${fmt.mxn(grandTotal)}</span>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;padding:10px 0 4px;">
+        <div class="form-field"><label>Folio</label><input type="text" id="bfcFolio" value="${folio}"></div>
+        <div class="form-field"><label>Fecha emisión</label><input type="date" id="bfcIssue" value="${today}"></div>
+        <div class="form-field"><label>Vencimiento</label><input type="date" id="bfcDue" value="${dueDate}"></div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-ghost btn-sm" onclick="Jobby.Modal.close()">Cancelar</button>
+        <button class="btn btn-primary btn-sm" onclick="confirmBillFact('${clientId}')">Crear factura</button>
+      </div>`, { width: '520px', closeOnBackdrop: false });
+  };
+
+  window.bfcToggleAll = (el) => {
+    document.querySelectorAll('.bfc-chk, .bfc-svc-chk').forEach(c => c.checked = el.checked);
+    bfcUpdateTotals();
+  };
+
+  window.bfcToggleSvc = (gi) => {
+    const svcChk = document.querySelector(`.bfc-svc-chk[data-group="${gi}"]`);
+    document.querySelectorAll(`.bfc-chk[data-group="${gi}"]`).forEach(c => c.checked = svcChk.checked);
+    bfcUpdateTotals();
+  };
+
+  window.bfcUpdateTotals = () => {
+    const checked = [...document.querySelectorAll('.bfc-chk:checked')];
+    const subtotal = checked.reduce((s, c) => s + (+c.dataset.amt || 0), 0);
+    const applyIva = document.getElementById('bfc-iva')?.checked;
+    const iva = applyIva ? subtotal * 0.16 : 0;
+    const subEl = document.getElementById('bfcSubtotal'); if (subEl) subEl.textContent = fmt.mxn(subtotal);
+    const ivaRow = document.getElementById('bfcIvaRow'); if (ivaRow) ivaRow.style.display = applyIva ? 'flex' : 'none';
+    const ivaEl = document.getElementById('bfcIvaAmt'); if (ivaEl) ivaEl.textContent = fmt.mxn(iva);
+    const totEl = document.getElementById('bfcTotal'); if (totEl) totEl.textContent = fmt.mxn(subtotal + iva);
+    const allChk = document.getElementById('bfc-all');
+    const allItems = document.querySelectorAll('.bfc-chk');
+    if (allChk) {
+      allChk.checked = checked.length === allItems.length && allItems.length > 0;
+      allChk.indeterminate = checked.length > 0 && checked.length < allItems.length;
+    }
+  };
+
+  window.confirmBillFact = (clientId) => {
+    const client = Store.find('clients', clientId);
+    const checked = [...document.querySelectorAll('.bfc-chk:checked')];
+    if (!checked.length) { toast('Selecciona al menos una proyección', 'error'); return; }
+    const applyIva = document.getElementById('bfc-iva').checked;
+    const folio = document.getElementById('bfcFolio').value.trim();
+    const issueDate = document.getElementById('bfcIssue').value;
+    const dueDate = document.getElementById('bfcDue').value;
+    const fcIds = checked.map(c => c.dataset.fcid);
+    const selectedForecasts = fcIds.map(id => Store.find('forecasts', id)).filter(Boolean);
+    const subtotal = selectedForecasts.reduce((s, f) => s + f.amount, 0);
+    const iva = applyIva ? +(subtotal * 0.16).toFixed(2) : 0;
+    const total = +(subtotal + iva).toFixed(2);
+    const items = selectedForecasts.map(f => ({ desc: f.concept || f.service || 'Servicio', qty: 1, unit: 'E48', price: f.amount, discount: 0, clave: '' }));
+    Store.add('invoices', {
+      folio, type: 'emitted', clientId, issueDate, dueDate, status: 'pending',
+      subtotal: +subtotal.toFixed(2), iva, total,
+      cfdiUse: 'G03', metodoPago: 'PPD', formaPago: '99', items
+    });
+    selectedForecasts.forEach(f => Store.remove('forecasts', f.id));
+    Store.logActivity('Facturó proyecciones', folio);
+    const newInv = Store.all('invoices').slice(-1)[0];
+    Modal.close();
+    render();
+    Modal.open(`
+      <div class="modal-head">
+        <div><h3>Factura creada</h3><div class="sub">${folio} · ${client.name}</div></div>
+        <button class="modal-close" onclick="Jobby.Modal.close()">✕</button>
+      </div>
+      <div style="padding:16px 0 8px;text-align:center;">
+        <div style="font-family:var(--mono);font-size:0.84rem;color:var(--stone);margin-bottom:8px;">${fcIds.length} proyección${fcIds.length !== 1 ? 'es' : ''} facturadas y eliminadas</div>
+        <div style="font-family:var(--serif);font-size:1.5rem;color:var(--ink);font-weight:600;">${fmt.mxn(total)}</div>
+        ${applyIva ? `<div style="font-family:var(--mono);font-size:0.75rem;color:var(--stone);margin-top:4px;">IVA incluido: ${fmt.mxn(iva)}</div>` : ''}
+      </div>
+      <div class="modal-foot" style="justify-content:center;">
+        <button class="btn btn-ghost btn-sm" onclick="Jobby.Modal.close()">Cerrar</button>
+        <a href="factura-detalle.html?id=${newInv.id}" class="btn btn-primary btn-sm">Ver factura</a>
+      </div>`, { width: '380px' });
+  };
+
+  window.openNFForClient = (clientId) => {
+    openNF();
+    setTimeout(() => nfPickClient(clientId), 100);
+  };
+
+  render();
+  window.__facturasRender = render;
+})();
+
+/* ── Nueva Factura panel logic ─────────────────────────── */
+(function () {
+  const { Store, fmt, toast, addDays } = Jobby;
+
+  const UNIDADES = [
+    { v: 'E48', l: 'E48 · Servicio' },
+    { v: 'H87', l: 'H87 · Pieza' },
+    { v: 'ACT', l: 'ACT · Actividad' },
+    { v: 'HUR', l: 'HUR · Hora' },
+    { v: 'DAY', l: 'DAY · Día' },
+    { v: 'MON', l: 'MON · Mes' },
+    { v: 'KGM', l: 'KGM · Kilogramo' },
+    { v: 'MTR', l: 'MTR · Metro' },
+    { v: 'LTR', l: 'LTR · Litro' },
+    { v: 'XBX', l: 'XBX · Caja' },
+    { v: 'SET', l: 'SET · Conjunto' },
+  ];
+
+  let nfItems = [];
+  let nfSelectedClient = null;
+  const { nextFolioForClient } = Jobby;
+
+  window.openNF = function () {
+    nfItems = [];
+    nfSelectedClient = null;
+
+    const emp = Store.company;
+    document.getElementById('nfEmisor').innerHTML =
+      `<span>${emp.name}</span>&nbsp;·&nbsp;<span>${emp.rfc}</span>&nbsp;·&nbsp;<span>${emp.regimenFiscal || '601 – General de Ley PM'}</span>`;
+
+    document.getElementById('nfFolio').value = nextFolioForClient(null);
+    document.getElementById('nfFolioHint').textContent = 'Se actualizará con las iniciales del cliente al seleccionarlo';
+
+    const today = new Date().toISOString().slice(0, 10);
+    document.getElementById('nfIssue').value = today;
+    document.getElementById('nfDue').value = addDays(today, 30);
+
+    document.getElementById('nfMetodo').value = 'PPD';
+    document.getElementById('nfForma').value = '99';
+    document.getElementById('nfClientSearch').value = '';
+    document.getElementById('nfClientRfc').value = '';
+    document.getElementById('nfClientInfo').style.display = 'none';
+    document.getElementById('nfSuggest').classList.remove('show');
+    document.getElementById('nfCondiciones').value = '';
+    document.getElementById('nfPedido').value = '';
+    document.getElementById('nfFolioEntrega').value = '';
+    document.getElementById('nfObservaciones').value = '';
+    document.getElementById('nfNotes').value = '';
+
+    nfItems.push({ desc: '', qty: 1, unit: 'E48', price: 0, discount: 0, clave: '' });
+    nfRenderItems();
+
+    document.getElementById('nfOverlay').classList.add('open');
+    document.getElementById('nfSheet').classList.add('open');
+    document.body.style.overflow = 'hidden';
+    setTimeout(() => document.getElementById('nfClientSearch').focus(), 300);
+  };
+
+  window.closeNF = function () {
+    document.getElementById('nfOverlay').classList.remove('open');
+    document.getElementById('nfSheet').classList.remove('open');
+    document.body.style.overflow = '';
+  };
+
+  document.getElementById('nfMetodo').addEventListener('change', function () {
+    const forma = document.getElementById('nfForma');
+    if (this.value === 'PPD') { forma.value = '99'; }
+    else if (forma.value === '99') { forma.value = '03'; }
+  });
+
+  document.getElementById('nfIssue').addEventListener('change', function () {
+    if (nfSelectedClient?.paymentTerms) {
+      document.getElementById('nfDue').value = addDays(this.value, nfSelectedClient.paymentTerms);
+    }
+  });
+
+  /* Client autocomplete */
+  const searchEl = document.getElementById('nfClientSearch');
+  const suggestEl = document.getElementById('nfSuggest');
+
+  searchEl.addEventListener('input', function () {
+    const q = this.value.toLowerCase().trim();
+    if (!q) { suggestEl.classList.remove('show'); return; }
+    const matches = Store.all('clients').filter(c =>
+      c.name.toLowerCase().includes(q) || (c.rfc || '').toLowerCase().includes(q)
+    ).slice(0, 8);
+    if (!matches.length) { suggestEl.classList.remove('show'); return; }
+    suggestEl.innerHTML = matches.map(c =>
+      `<div class="nf-suggest-item" onclick="nfPickClient('${c.id}')">
+        <div class="n">${c.name}</div>
+        <div class="m">${c.rfc || '—'} · ${c.paymentTerms || 30} días</div>
+      </div>`
+    ).join('');
+    suggestEl.classList.add('show');
+  });
+
+  document.addEventListener('click', e => {
+    if (!searchEl.contains(e.target) && !suggestEl.contains(e.target))
+      suggestEl.classList.remove('show');
+  });
+
+  window.nfPickClient = function (id) {
+    const c = Store.find('clients', id);
+    nfSelectedClient = c;
+    document.getElementById('nfClientSearch').value = c.name;
+    document.getElementById('nfClientRfc').value = c.rfc || '';
+    const info = document.getElementById('nfClientInfo');
+    info.textContent = `Crédito: ${fmt.mxn(c.creditLimit || 0)} · Pago a ${c.paymentTerms || 30} días`;
+    info.style.display = '';
+    suggestEl.classList.remove('show');
+    const issue = document.getElementById('nfIssue').value;
+    if (issue && c.paymentTerms)
+      document.getElementById('nfDue').value = addDays(issue, c.paymentTerms);
+    // Regenerate folio with client initials
+    const folio = nextFolioForClient(id);
+    document.getElementById('nfFolio').value = folio;
+    document.getElementById('nfFolioHint').textContent = `Folio basado en iniciales de ${c.name}`;
+  };
+
+  /* Items */
+  window.nfAddRow = function () {
+    nfItems.push({ desc: '', qty: 1, unit: 'E48', price: 0, discount: 0, clave: '' });
+    nfRenderItems();
+  };
+
+  function inputStyle(extra) {
+    return `style="border:1px solid var(--line);border-radius:4px;padding:7px 8px;font-family:var(--mono);font-size:0.82rem;color:var(--ink);width:100%;background:var(--paper);outline:none;${extra || ''}"`;
+  }
+
+  function nfRenderItems() {
+    const unitOpts = UNIDADES.map(u => `<option value="${u.v}">${u.l}</option>`).join('');
+    document.getElementById('nfItemsBody').innerHTML = nfItems.map((item, idx) => {
+      const importe = item.qty * item.price * (1 - item.discount / 100);
+      const selOpts = unitOpts.replace(`value="${item.unit}"`, `value="${item.unit}" selected`);
+      return `<tr>
+        <td>
+          <input type="text" value="${item.desc.replace(/"/g, '&quot;')}" placeholder="Descripción del concepto…"
+            ${inputStyle('')}
+            oninput="nfItemSet(${idx},'desc',this.value)">
+          <input class="nf-clave" type="text" value="${item.clave}" placeholder="ClaveProdServ SAT (ej. 80141500)"
+            oninput="nfItemSet(${idx},'clave',this.value)">
+        </td>
+        <td><input type="number" min="0.01" step="any" value="${item.qty}" ${inputStyle('text-align:right;')} oninput="nfItemSet(${idx},'qty',+this.value||1)"></td>
+        <td><select onchange="nfItemSet(${idx},'unit',this.value)">${selOpts}</select></td>
+        <td><input type="number" min="0" step="any" value="${item.price}" ${inputStyle('text-align:right;')} oninput="nfItemSet(${idx},'price',+this.value)"></td>
+        <td><input type="number" min="0" max="100" step="any" value="${item.discount}" ${inputStyle('text-align:right;')} oninput="nfItemSet(${idx},'discount',+this.value)"></td>
+        <td class="r" style="font-family:var(--mono);font-size:0.82rem;white-space:nowrap;padding-top:12px;" id="nfImp${idx}">${fmt.mxn(importe)}</td>
+        <td><button class="rm-btn" style="opacity:1;margin-top:4px;" onclick="nfRemoveRow(${idx})">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button></td>
+      </tr>`;
+    }).join('');
+    nfUpdateTotals();
+  }
+
+  window.nfItemSet = function (idx, key, val) {
+    nfItems[idx][key] = val;
+    const item = nfItems[idx];
+    const impEl = document.getElementById('nfImp' + idx);
+    if (impEl) impEl.textContent = fmt.mxn(item.qty * item.price * (1 - item.discount / 100));
+    nfUpdateTotals();
+  };
+
+  window.nfRemoveRow = function (idx) {
+    nfItems.splice(idx, 1);
+    if (!nfItems.length) nfItems.push({ desc: '', qty: 1, unit: 'E48', price: 0, discount: 0, clave: '' });
+    nfRenderItems();
+  };
+
+  function nfUpdateTotals() {
+    let subtotal = 0, totalDiscount = 0;
+    nfItems.forEach(item => {
+      const bruto = item.qty * item.price;
+      subtotal += bruto;
+      totalDiscount += bruto * (item.discount / 100);
+    });
+    const base = subtotal - totalDiscount;
+    const iva = base * 0.16;
+    const total = base + iva;
+    document.getElementById('nfTS').textContent = fmt.mxn(subtotal);
+    document.getElementById('nfTDR').style.display = totalDiscount > 0 ? '' : 'none';
+    document.getElementById('nfTD').textContent = '−' + fmt.mxn(totalDiscount);
+    document.getElementById('nfTI').textContent = fmt.mxn(iva);
+    document.getElementById('nfTT').textContent = fmt.mxn(total);
+    document.getElementById('nfFootTot').textContent = fmt.mxn(total) + ' MXN';
+  }
+
+  window.nfSave = function (status) {
+    if (!nfSelectedClient) { toast('Selecciona un cliente receptor', 'error'); return; }
+    const valid = nfItems.filter(i => i.desc.trim() && i.qty > 0 && i.price >= 0);
+    if (!valid.length || valid.every(i => i.price === 0)) {
+      toast('Agrega al menos un concepto con precio', 'error'); return;
+    }
+    let subtotal = 0, totalDiscount = 0;
+    valid.forEach(item => {
+      const bruto = item.qty * item.price;
+      subtotal += bruto;
+      totalDiscount += bruto * (item.discount / 100);
+    });
+    const base = subtotal - totalDiscount;
+    const iva = base * 0.16;
+    const total = base + iva;
+    const folio = document.getElementById('nfFolio').value;
+    Store.add('invoices', {
+      folio, type: 'emitted',
+      clientId: nfSelectedClient.id,
+      issueDate: document.getElementById('nfIssue').value,
+      dueDate: document.getElementById('nfDue').value,
+      status,
+      subtotal: +base.toFixed(2),
+      iva: +iva.toFixed(2),
+      total: +total.toFixed(2),
+      cfdiUse: document.getElementById('nfCfdi').value,
+      metodoPago: document.getElementById('nfMetodo').value,
+      formaPago: document.getElementById('nfForma').value,
+      regimenReceptor: document.getElementById('nfRegimen').value,
+      paymentConditions: document.getElementById('nfCondiciones').value,
+      pedidoId: document.getElementById('nfPedido').value.trim() || null,
+      folioEntrega: document.getElementById('nfFolioEntrega').value.trim() || null,
+      observaciones: document.getElementById('nfObservaciones').value.trim() || null,
+      notes: document.getElementById('nfNotes').value,
+      items: valid,
+    });
+    Store.logActivity('Creó factura', folio);
+    closeNF();
+    toast(`Factura ${folio} ${status === 'draft' ? 'guardada como borrador' : 'timbrada y enviada'}`);
+    if (window.__facturasRender) window.__facturasRender();
+  };
+})();
+</script>
+<script src="demo-aviso.js"></script>
+</body>
+</html>
